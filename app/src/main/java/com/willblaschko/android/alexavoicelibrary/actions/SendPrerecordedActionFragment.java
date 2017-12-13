@@ -57,10 +57,10 @@ public class SendPrerecordedActionFragment extends BaseListenerFragment {
 
     }
 
-    @Override
-    protected String getTitle() {
-        return getString(R.string.fragment_action_send_prerecorded);
-    }
+//    @Override
+//    protected String getTitle() {
+//        return getString(R.string.fragment_action_send_prerecorded);
+//    }
 
     @Override
     protected int getRawCode() {

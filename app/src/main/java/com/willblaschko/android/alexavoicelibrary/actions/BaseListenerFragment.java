@@ -36,9 +36,9 @@ public abstract class BaseListenerFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if(getActivity() != null) {
+       /* if(getActivity() != null) {
             getActivity().setTitle(getTitle());
-        }
+        }*/
     }
 
     protected AsyncCallback<AvsResponse, Exception> getRequestCallback(){
@@ -51,7 +51,7 @@ public abstract class BaseListenerFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.code_menu, menu);
+//        inflater.inflate(R.menu.code_menu, menu);
 
     }
 
@@ -59,7 +59,7 @@ public abstract class BaseListenerFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.view_code:
-                DisplayCodeFragment fragment = DisplayCodeFragment.getInstance(getTitle(), getRawCode());
+                DisplayCodeFragment fragment = DisplayCodeFragment.getInstance(/*getTitle(), */getRawCode());
                 loadFragment(fragment);
                 return true;
         }
@@ -67,7 +67,7 @@ public abstract class BaseListenerFragment extends Fragment {
     }
 
     public abstract void startListening();
-    protected abstract String getTitle();
+//    protected abstract String getTitle();
     @RawRes
     protected abstract int getRawCode();
 

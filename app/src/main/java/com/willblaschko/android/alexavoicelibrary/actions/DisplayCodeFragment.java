@@ -28,9 +28,9 @@ public class DisplayCodeFragment extends Fragment {
     String title;
     int rawCode;
 
-    public static DisplayCodeFragment getInstance(String title, @RawRes int rawCode){
+    public static DisplayCodeFragment getInstance(@RawRes int rawCode){
         Bundle b = new Bundle();
-        b.putString(ARG_TITLE, title);
+//        b.putString(ARG_TITLE, title);
         b.putInt(ARG_RAW_CODE, rawCode);
         DisplayCodeFragment fragment = new DisplayCodeFragment();
         fragment.setArguments(b);
@@ -54,9 +54,9 @@ public class DisplayCodeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if(getActivity() != null) {
+       /* if(getActivity() != null) {
             getActivity().setTitle(title);
-        }
+        }*/
     }
 
     @Nullable

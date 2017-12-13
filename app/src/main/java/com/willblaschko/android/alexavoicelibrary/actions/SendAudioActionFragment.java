@@ -1,6 +1,10 @@
 package com.willblaschko.android.alexavoicelibrary.actions;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -35,6 +39,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private static final int AUDIO_RATE = 16000;
     private RawAudioRecorder recorder;
     private RecorderView recorderView;
+    private AlexaReceiver alexaReceiver;
 
     @Nullable
     @Override
@@ -56,6 +61,11 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                 }
             }
         });
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.konka.android.intent.action.START_VOICE");
+        filter.addAction("com.konka.android.intent.action.STOP_VOICE");
+        alexaReceiver = new AlexaReceiver();
+        getContext().registerReceiver(alexaReceiver, filter);
     }
 
     @Override
@@ -87,6 +97,14 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                 }
             }
 
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (alexaReceiver != null) {
+            getContext().unregisterReceiver(alexaReceiver);
         }
     }
 
@@ -152,15 +170,29 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         }
     }
 
-    @Override
+/*    @Override
     protected String getTitle() {
-        return getString(R.string.fragment_action_send_audio);
-    }
+        return getString(*//*R.string.fragment_action_send_audio*//*R.string.alexa_api);
+    }*/
 
     @Override
     protected int getRawCode() {
         return R.raw.code_audio;
     }
 
+   public class AlexaReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "onReceive: intent is " + intent.getAction());
+            if(recorder == null && intent.getAction().equals("com.konka.android.intent.action.START_VOICE")) {
+                startListening();
+            }
+            if(recorder == null && intent.getAction().equals("com.konka.android.intent.action.STOP_VOICE")) {
+                stopListening();
+            }
+        }
+    }
 
 }

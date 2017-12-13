@@ -27,10 +27,10 @@ public class ActionsFragment extends BaseListenerFragment {
 
     }
 
-    @Override
-    protected String getTitle() {
-        return getString(R.string.app_name);
-    }
+//    @Override
+//    protected String getTitle() {
+//        return getString(R.string.app_name);
+//    }
 
     @Override
     protected int getRawCode() {

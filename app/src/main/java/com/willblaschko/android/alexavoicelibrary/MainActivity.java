@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.willblaschko.android.alexavoicelibrary.actions.ActionsFragment;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
+import com.willblaschko.android.alexavoicelibrary.actions.SendAudioActionFragment;
 
 import static com.willblaschko.android.alexavoicelibrary.R.id.frame;
 
@@ -28,11 +29,12 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
         //Listen for changes in the back stack
-        getSupportFragmentManager().addOnBackStackChangedListener(this);
+//        getFragmentManager().addOnBackStackChangedListener(this);
         //Handle when activity is recreated like on orientation Change
         shouldDisplayHomeUp();
 
@@ -40,7 +42,8 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
         status = (TextView) findViewById(R.id.status);
         loading = findViewById(R.id.loading);
 
-        ActionsFragment fragment = new ActionsFragment();
+//        ActionsFragment fragment = new ActionsFragment();
+        SendAudioActionFragment fragment = new SendAudioActionFragment();
         loadFragment(fragment, false);
     }
 
