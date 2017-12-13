@@ -32,6 +32,7 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
 //        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().hide();
 
         //Listen for changes in the back stack
 //        getFragmentManager().addOnBackStackChangedListener(this);
