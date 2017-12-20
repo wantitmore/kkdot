@@ -52,6 +52,7 @@ public class SpeechSendAudio extends SpeechSendEvent {
             if (callback != null) {
                 if (response != null) {
                     callback.success(response);
+                    Log.i(TAG, "sendAudio: response is " + response.toString());
                 }
                 callback.complete();
             }

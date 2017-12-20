@@ -20,6 +20,7 @@
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <action android:name="com.willblaschko.android.alexavoicelibrary" />
             </intent-filter>
         </activity>
 

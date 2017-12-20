@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
@@ -40,6 +41,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private RawAudioRecorder recorder;
     private RecorderView recorderView;
     private AlexaReceiver alexaReceiver;
+    private ImageView mMicrophone;
 
     @Nullable
     @Override
@@ -51,6 +53,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         recorderView = (RecorderView) view.findViewById(R.id.recorder);
+        mMicrophone = (ImageView) view.findViewById(R.id.iv_microphone);
         recorderView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -131,14 +134,20 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private DataRequestBody requestBody = new DataRequestBody() {
         @Override
         public void writeTo(BufferedSink sink) throws IOException {
+            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
-                if(recorder != null) {
                     final float rmsdb = recorder.getRmsdb();
                     if(recorderView != null) {
                         recorderView.post(new Runnable() {
                             @Override
                             public void run() {
                                 recorderView.setRmsdbLevel(rmsdb);
+                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+                               /* if (rmsdb <= 0) {
+                                    mMicrophone.setVisibility(View.VISIBLE);
+                                } else {
+                                    mMicrophone.setVisibility(View.VISIBLE);
+                                }*/
                             }
                         });
                     }
@@ -149,8 +158,6 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                         Log.i(TAG, "Received audio");
                         Log.i(TAG, "RMSDB: " + rmsdb);
                     }
-                }
-
                 try {
                     Thread.sleep(25);
                 } catch (InterruptedException e) {
@@ -186,10 +193,10 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         public void onReceive(Context context, Intent intent) {
 
             Log.d(TAG, "onReceive: intent is " + intent.getAction());
-            if(recorder == null && intent.getAction().equals("com.konka.android.intent.action.START_VOICE")) {
+            if(intent.getAction().equals("com.konka.android.intent.action.START_VOICE")) {
                 startListening();
             }
-            if(recorder == null && intent.getAction().equals("com.konka.android.intent.action.STOP_VOICE")) {
+            if(intent.getAction().equals("com.konka.android.intent.action.STOP_VOICE")) {
                 stopListening();
             }
         }

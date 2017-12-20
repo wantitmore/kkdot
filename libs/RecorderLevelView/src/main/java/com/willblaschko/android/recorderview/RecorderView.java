@@ -8,12 +8,11 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
-import android.view.View;
 
 /**
  * @author willb_000 on 5/5/2016.
  */
-public class RecorderView extends View {
+public class RecorderView extends android.support.v7.widget.AppCompatImageView {
 
     private final static String TAG = "RecorderView";
 
@@ -53,7 +52,7 @@ public class RecorderView extends View {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public RecorderView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+        super(context, attrs, defStyleAttr);
         init();
     }
 
