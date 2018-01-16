@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.interfaces.AvsException;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
@@ -27,6 +28,7 @@ import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsExpectSpeec
 import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsStopCaptureItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
+import com.willblaschko.android.alexa.utility.Bean;
 
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.io.IOUtils;
@@ -61,6 +63,7 @@ public class ResponseParser {
     public static final String TAG = "ResponseParser";
 
     private static final Pattern PATTERN = Pattern.compile("<(.*?)>");
+    public static String kkDirective;
 
     /**
      * Get the AvsItem associated with a Alexa API post/get, this will contain a list of {@link AvsItem} directives,
@@ -95,7 +98,7 @@ public class ResponseParser {
         }
 
         String responseString = string(bytes);
-        Log.i(TAG, responseString);
+        Log.i(TAG, "response is " + responseString);
         if (checkBoundary) {
             final String responseTrim = responseString.trim();
             final String testBoundary = "--" + boundary;
@@ -136,7 +139,21 @@ public class ResponseParser {
                 } else {
                     // get the json directive
                     String directive = data.toString(Charset.defaultCharset().displayName());
-
+                    boolean isCardData = isCard(headers);
+                    Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
+                    try {
+                        Gson gson = new Gson();
+                        Bean bean = gson.fromJson(directive, Bean.class);
+                        String subTitle = bean.getDirective().getPayload().getTitle().getSubTitle();
+                        Log.d(TAG, "onCreate: " + subTitle);
+                        if (subTitle.contains("newFun")) {
+                            //execute skill
+                            AlexaManager.getKKSkill = true;
+                            kkDirective = directive;
+                        }
+                    } catch (RuntimeException e) {
+                        e.printStackTrace();
+                    }
                     directives.add(getDirective(directive));
                 }
                 count++;
@@ -291,6 +308,16 @@ public class ResponseParser {
      */
     private static boolean isJson(String headers) {
         if (headers.contains("application/json")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if the directive controls KK
+     */
+    private static boolean isCard(String headers) {
+        if (headers.contains("RenderTemplate")) {
             return true;
         }
         return false;

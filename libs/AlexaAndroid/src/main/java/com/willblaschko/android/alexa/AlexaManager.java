@@ -3,6 +3,7 @@ package com.willblaschko.android.alexa;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
@@ -59,6 +60,7 @@ public class AlexaManager {
     private String urlEndpoint;
     private Context mContext;
     private boolean mIsRecording = false;
+    public static boolean getKKSkill = false;
 
     private AlexaManager(Context context, String productId){
         mContext = context.getApplicationContext();
@@ -610,9 +612,14 @@ public class AlexaManager {
 
                 final AvsResponse items = response.code() == HttpURLConnection.HTTP_NO_CONTENT ? new AvsResponse() :
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
-
                 response.body().close();
-
+                Log.d(TAG, "success: ---------------------");
+                if (!TextUtils.isEmpty(ResponseParser.kkDirective) && getKKSkill) {
+                    Log.d(TAG, "success: kkDirective is " + ResponseParser.kkDirective);
+                    getKKSkill = false;
+//                    mAndroidSystemHandler.controlKK(ResponseParser.kkDirective);
+                }
+                ResponseParser.kkDirective = null;
                 mAndroidSystemHandler.handleItems(items);
 
                 if (callback != null) {

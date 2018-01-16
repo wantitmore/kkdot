@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.callbacks.ImplAsyncCallback;
 import com.willblaschko.android.alexa.data.Directive;
@@ -30,6 +31,7 @@ import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
 import com.willblaschko.android.alexa.service.DownChannelService;
+import com.willblaschko.android.alexa.utility.Bean;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -221,5 +223,26 @@ public class AndroidSystemHandler {
         });
 
 
+    }
+    public void controlKK(String directive) {
+        Gson gson = new Gson();
+        Bean bean = gson.fromJson(directive, Bean.class);
+        String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
+        Log.d(TAG, "controlKK: " + mainTitle);
+        Looper.prepare();
+        Toast.makeText(context, "intent is " + mainTitle, Toast.LENGTH_SHORT).show();
+        Looper.loop();
+        ResponseParser.kkDirective = null;
+        new Thread(){
+            public void run() {
+                try{
+                    Instrumentation inst = new Instrumentation();
+                    inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+                    Log.d(TAG, "run: KeyEvent.KEYCODE_BACK");
+                }
+                catch (Exception e) {
+                }
+            }
+        }.start();
     }
 }

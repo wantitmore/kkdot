@@ -136,6 +136,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         public void writeTo(BufferedSink sink) throws IOException {
             Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
+                try {
                     final float rmsdb = recorder.getRmsdb();
                     if(recorderView != null) {
                         recorderView.post(new Runnable() {
@@ -143,11 +144,11 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                             public void run() {
                                 recorderView.setRmsdbLevel(rmsdb);
                                 Log.d(TAG, "run: ----rmsdb is " + rmsdb);
-                               /* if (rmsdb <= 0) {
+                                if (rmsdb <= 0) {
                                     mMicrophone.setVisibility(View.VISIBLE);
                                 } else {
                                     mMicrophone.setVisibility(View.VISIBLE);
-                                }*/
+                                }
                             }
                         });
                     }
@@ -158,6 +159,9 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                         Log.i(TAG, "Received audio");
                         Log.i(TAG, "RMSDB: " + rmsdb);
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 try {
                     Thread.sleep(25);
                 } catch (InterruptedException e) {

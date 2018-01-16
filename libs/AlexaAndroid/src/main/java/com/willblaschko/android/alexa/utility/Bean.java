@@ -1,4 +1,4 @@
-package com.willblaschko.android.alexavoicelibrary;
+package com.willblaschko.android.alexa.utility;
 
 /**
  * Created by user001 on 2018-1-12.
