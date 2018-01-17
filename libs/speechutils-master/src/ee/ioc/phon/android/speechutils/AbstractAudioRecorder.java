@@ -135,12 +135,14 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
         int len = buffer.length;
         int numOfBytes = recorder.read(buffer, 0, len);
         int status = getStatus(numOfBytes, len);
+        android.util.Log.d("SpeechRecord", "read: " + len);
         if (status == 0 && numOfBytes >= 0) {
             // arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
             // numOfBytes <= len, typically == len, but at the end of the recording can be < len.
             System.arraycopy(buffer, 0, mRecording, mRecordedLength, numOfBytes);
             mRecordedLength += len;
         }
+        android.util.Log.d("record read: ", "read: " + status);
         return status;
     }
 
@@ -225,6 +227,7 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
      * @return volume indicator that shows the average volume of the last read buffer
      */
     public float getRmsdb() {
+        android.util.Log.d("getRmsdb()", "getRmsdb: --------------------");
         long sumOfSquares = getRms(mRecordedLength, mBuffer.length);
         double rootMeanSquare = Math.sqrt(sumOfSquares / (mBuffer.length / 2));
         android.util.Log.d("AbstractAudioRecorder", "getRmsdb: " + rootMeanSquare + ", mRecordedLength is " + mRecordedLength + "," +
@@ -338,9 +341,11 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
         }
 
         long sum = 0;
+        android.util.Log.d("curSample", "getRms: begin is " + begin + ", end is " + end);
         for (int i = begin; i < end; i += 2) {
             short curSample = getShort(mRecording[i], mRecording[i + 1]);
-            android.util.Log.d("curSample", "getRms: -----curSample is " + curSample);
+            android.util.Log.d("curSample", "getRms: -----curSample is " + curSample
+            + "mRecording[i] is " + mRecording[i] + ", mRecording[i + 1] is " + mRecording[i + 1]);
             sum += curSample * curSample;
         }
         return sum;

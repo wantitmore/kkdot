@@ -617,7 +617,7 @@ public class AlexaManager {
                 if (!TextUtils.isEmpty(ResponseParser.kkDirective) && getKKSkill) {
                     Log.d(TAG, "success: kkDirective is " + ResponseParser.kkDirective);
                     getKKSkill = false;
-//                    mAndroidSystemHandler.controlKK(ResponseParser.kkDirective);
+                    mAndroidSystemHandler.controlKK(ResponseParser.kkDirective);
                 }
                 ResponseParser.kkDirective = null;
                 mAndroidSystemHandler.handleItems(items);

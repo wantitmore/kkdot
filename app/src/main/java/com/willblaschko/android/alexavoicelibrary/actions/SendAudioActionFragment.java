@@ -160,6 +160,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                         Log.i(TAG, "RMSDB: " + rmsdb);
                     }
                 } catch (Exception e) {
+                    Log.d(TAG, "writeTo: error is " + e.getMessage());
                     e.printStackTrace();
                 }
                 try {

@@ -229,20 +229,9 @@ public class AndroidSystemHandler {
         Bean bean = gson.fromJson(directive, Bean.class);
         String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
         Log.d(TAG, "controlKK: " + mainTitle);
-        Looper.prepare();
+        /*Looper.prepare();
         Toast.makeText(context, "intent is " + mainTitle, Toast.LENGTH_SHORT).show();
-        Looper.loop();
+        Looper.loop();*/
         ResponseParser.kkDirective = null;
-        new Thread(){
-            public void run() {
-                try{
-                    Instrumentation inst = new Instrumentation();
-                    inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
-                    Log.d(TAG, "run: KeyEvent.KEYCODE_BACK");
-                }
-                catch (Exception e) {
-                }
-            }
-        }.start();
     }
 }
