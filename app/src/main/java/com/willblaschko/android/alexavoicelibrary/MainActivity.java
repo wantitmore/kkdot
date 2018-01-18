@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -73,7 +74,7 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
 
 
     protected void stateListening(){
-
+        Log.d(TAG, "stateListening: -->");
         if(status != null) {
             status.setText(R.string.status_listening);
             loading.setVisibility(View.GONE);

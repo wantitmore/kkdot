@@ -23,6 +23,7 @@ import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.recorderview.RecorderView;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import ee.ioc.phon.android.speechutils.RawAudioRecorder;
 import okio.BufferedSink;
@@ -143,7 +144,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                             @Override
                             public void run() {
                                 recorderView.setRmsdbLevel(rmsdb);
-                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+//                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                                 if (rmsdb <= 0) {
                                     mMicrophone.setVisibility(View.VISIBLE);
                                 } else {
@@ -198,10 +199,11 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         public void onReceive(Context context, Intent intent) {
 
             Log.d(TAG, "onReceive: intent is " + intent.getAction());
-            if(intent.getAction().equals("com.konka.android.intent.action.START_VOICE")) {
+            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")&& recorder == null) {
+//                AndroidSystemHandler.welcomeIntent = false;
                 startListening();
             }
-            if(intent.getAction().equals("com.konka.android.intent.action.STOP_VOICE")) {
+            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {
                 stopListening();
             }
         }

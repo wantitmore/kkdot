@@ -145,6 +145,7 @@ public class ResponseParser {
                         Gson gson = new Gson();
                         Bean bean = gson.fromJson(directive, Bean.class);
                         String subTitle = bean.getDirective().getPayload().getTitle().getSubTitle();
+                        String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
                         Log.d(TAG, "onCreate: " + subTitle);
                         if (subTitle.contains("newFun")) {
                             //execute skill
