@@ -32,6 +32,7 @@ import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexa.utility.Bean;
+import com.willblaschko.android.alexa.utility.KKController;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -229,6 +230,7 @@ public class AndroidSystemHandler {
         Bean bean = gson.fromJson(directive, Bean.class);
         String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
         Log.d(TAG, "controlKK: " + mainTitle);
+        KKController.controlAction(context, mainTitle);
         /*Looper.prepare();
         Toast.makeText(context, "intent is " + mainTitle, Toast.LENGTH_SHORT).show();
         Looper.loop();*/
