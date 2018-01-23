@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.callbacks.ImplAsyncCallback;
 import com.willblaschko.android.alexa.data.Directive;
@@ -31,7 +30,6 @@ import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
 import com.willblaschko.android.alexa.service.DownChannelService;
-import com.willblaschko.android.alexa.utility.Bean;
 import com.willblaschko.android.alexa.utility.KKController;
 
 import java.io.IOException;
@@ -226,11 +224,7 @@ public class AndroidSystemHandler {
 
     }
     public void controlKK(String directive) {
-        Gson gson = new Gson();
-        Bean bean = gson.fromJson(directive, Bean.class);
-        String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
-        Log.d(TAG, "controlKK: " + mainTitle);
-        KKController.controlAction(context, mainTitle);
+        KKController.controlAction(context, directive);
         /*Looper.prepare();
         Toast.makeText(context, "intent is " + mainTitle, Toast.LENGTH_SHORT).show();
         Looper.loop();*/
