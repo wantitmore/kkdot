@@ -20,6 +20,7 @@ public class KKController {
         Bean bean = gson.fromJson(directive, Bean.class);
         String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
         Log.d(TAG, "controlKK: " + mainTitle);
+        String textField = bean.getDirective().getPayload().getTextField();
         if (mainTitle.contains("PowerIntent")) {// power off TV
             /*PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE); //reset TV
             if (pm != null) {
@@ -30,7 +31,6 @@ public class KKController {
             powerOffIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //            context.startActivity(powerOffIntent);
         } else if (mainTitle.contains("InputIntent")) {
-            String textField = bean.getDirective().getPayload().getTextField();
             if (textField.contains("input AV")) {
                 TVHelper.setInputSourceThroughTvPlayer(context, TvCommonManager.INPUT_SOURCE_CVBS);
             } else if (textField.contains("input DTV")) {
@@ -48,6 +48,46 @@ public class KKController {
             } else if (textField.contains("input HDMI 3")) {
                 TVHelper.setInputSourceThroughTvPlayer(context, TvCommonManager.INPUT_SOURCE_HDMI3);
             }
+        } else if (mainTitle.contains("ChannelIntent")) {
+            // switch channel
+            String channelName;
+            if (textField.contains("last")) {
+                channelName = TVHelper.CMD_LAST_CHANNEL;
+            } else if (textField.contains("next")) {
+                channelName = TVHelper.CMD_NEXT_CHANNEL;
+            } else if (textField.contains("previous")) {
+                channelName = TVHelper.CMD_PREVIOUS_CHANNEL;
+            } else if (textField.contains("first") || textField.contains("1ST")) {
+                channelName = TVHelper.CMD_FIRST_CHANNEL;
+            } else {
+                int channelIndex = textField.indexOf("channel");
+                channelName = textField.toUpperCase().substring(channelIndex + 7).trim().toUpperCase();
+            }
+            Log.d(TAG, "controlAction: channelName is " + channelName);
+            boolean isFoundTheChannel = false;
+            if (channelName.equals(TVHelper.CMD_LAST_CHANNEL)) {
+                isFoundTheChannel = TVHelper.toLastChannel();
+            } else if (channelName.equals(TVHelper.CMD_NEXT_CHANNEL)) {
+                isFoundTheChannel = TVHelper.toNextChannel();
+            } else if (channelName.equals(TVHelper.CMD_PREVIOUS_CHANNEL)) {
+                isFoundTheChannel = TVHelper.toPreviousChannel();
+            } else if (channelName.equals(TVHelper.CMD_FIRST_CHANNEL)) {
+                isFoundTheChannel = TVHelper.toFirstChannel();
+            } else {
+                // the last condition: use channel name
+                isFoundTheChannel = TVHelper.toDTVSpecialChannel(channelName);
+            }
+
+
+            ActionResult actionResult = new ActionResult(ControlActions.ACTION_CHANGE_CHANNEL);
+            if (isFoundTheChannel) {
+                Log.d(TAG, "controlAction: find channel " + channelName);
+                actionResult.setmActionMessage("channel to " + channelName);
+            } else {
+                Log.d(TAG, "controlAction: can not found channel " + channelName);
+                actionResult.setmActionMessage("can not found the channel:" + channelName);
+            }
+//            mActionResultCallback.actionResult(actionResult);
         }
     }
 }

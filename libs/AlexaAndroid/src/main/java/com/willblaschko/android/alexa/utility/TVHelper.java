@@ -128,6 +128,7 @@ public class TVHelper {
 
     public static boolean toSpecialChannel(int channelNo, int serviceType){
         // maybe always return false
+        Log.d(TAG, "toSpecialChannel: channel is " + channelNo);
         TvChannelManager.getInstance().selectProgram(channelNo, serviceType);
         return true;
     }
@@ -184,9 +185,10 @@ public class TVHelper {
 //     * @param channelName
 //     * @return
 //     */
-/*    public static boolean toDTVSpecialChannel(String channelName){
+    public static boolean toDTVSpecialChannel(String channelName){
         if (Tools.isAInteger(channelName)){
             int channelNo = Integer.parseInt(channelName);
+            Log.d(TAG, "toDTVSpecialChannel: channel is " + channelNo);
             if (isAValidChannelNo(channelNo)){
                 return toDTVSpecialChannel(channelNo);
             }
@@ -194,15 +196,15 @@ public class TVHelper {
         else {
             ProgramInfo programInfo = getProgramInfo(channelName);
             if (programInfo == null){
-                VCLog.v("can not find the channel:" + channelName);
+                Log.v(TAG, "can not find the channel:" + channelName);
                 return false;
             }
 
-            VCLog.v("to dtv special channel service id:" + programInfo.majorNum);
+            Log.v(TAG,"to dtv special channel service id:" + programInfo.majorNum);
             return toDTVSpecialChannel(programInfo.majorNum);
         }
         return false;
-    }*/
+    }
 
     public static boolean toLastChannel(){
         boolean ret = true;
