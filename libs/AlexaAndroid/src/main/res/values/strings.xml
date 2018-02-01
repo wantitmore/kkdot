@@ -3,4 +3,70 @@
     <string name="alexa_product_id"></string>
     <string name="alexa_api">https://avs-alexa-na.amazon.com</string>
     <string name="alexa_api_version">v20160207</string>
+
+
+    <string name="open_app_not_found">app no found</string>
+    <string name="uninstall_app_hint_p1">uninstalling</string>
+    <string name="voice_recognize_state_ready">Press voice key to talk</string>
+    <string name="voice_recognize_state_listen">I\'m listening</string>
+    <string name="voice_recognize_state_recognize">In Recognition</string>
+
+    <string name="network_error">No network is available. Do you want to set up your network?</string>
+    <string name="error_no_match">No recognition result matched.</string>
+    <string name="error_speech_timeout">No speech input</string>
+    <string name="error_network_timeout">Network operation timed out</string>
+
+    <string name="open_app_hint_p1">opening</string>
+    <string name="open_app_hint_p2">for you ...</string>
+    <string name="open_app_choose">which one you want to open</string>
+
+    <string name="uninstall_app_choose">which one you want to uninstall</string>
+    <string name="guide_main_item_app_title">App</string>
+    <string name="guide_main_item_app_subtitle">\"Open Netflix\"</string>
+    <string name="guide_main_item_video_title">Video on demand</string>
+    <string name="guide_main_item_video_subtitle">\"Watch the big bang theory\"</string>
+    <string name="guide_main_item_tv_title">TV control</string>
+    <string name="guide_main_item_tv_subtitle">\"Next Channel\"</string>
+    <string name="guide_main_item_setting_title">Settings</string>
+    <string name="guide_main_item_setting_subtitle">\"Set up the network\"</string>
+    <string name="guide_main_title_text">You can say</string>
+    <string name="conversation_make_confirm_yes">YES</string>
+    <string name="conversation_make_confirm_no">NO</string>
+
+    <string name="resp_setup_network">Starting network for you ...</string>
+    <string name="resp_set_time">Starting time for you ...</string>
+    <string name="resp_setup_language">Starting language for you ...</string>
+    <string name="resp_setup_bluetooth">Starting bluetooth for you ...</string>
+    <string name="resp_volume_up">volume up for you ...</string>
+    <string name="resp_volume_down">volume down for you ...</string>
+    <string name="resp_mute">mute for you ...</string>
+    <string name="resp_unmute">unmute for you ...</string>
+    <string name="resp_change_source">Switching source for you ...</string>
+    <string name="resp_back_home">backing home ...</string>
+    <string name="resp_open_setting">opening settings ...</string>
+    <string name="resp_open_tv">opening tv ...</string>
+    <string name="resp_open_epg">opening epg ...</string>
+    <string name="resp_open_pvr">opening pvr ...</string>
+    <string name="resp_show_info">showing information ...</string>
+    <string-array name="resp_can_not_analysis_array">
+        <item>I can not understand what you said, Try to say \"open browser\"</item>
+        <item>I can not understand what you said, Try to say \"install netflix\"</item>
+        <item>I can not understand what you said, Try to say \"watch ironman\"</item>
+        <item>I can not understand what you said, Try to say \"uninstall the netflix\"</item>
+        <item>I can not understand what you said, Try to say \"set up the network\"</item>
+        <item>I can not understand what you said, Try to say \"switch to DTV\"</item>
+        <item>I can not understand what you said, Try to say \"channel to BBC\"</item>
+        <item>I can not understand what you said, Try to say \"HOME\\TV\"</item>
+    </string-array>
+    <string name="resp_can_not_analysis">Try to say \"open browser\"</string>
+    <string name="prompt_install_netflix">Try to say \"install netflix\"</string>
+    <string name="prompt_watch_ironman">Try to say \"watch ironman\"</string>
+    <string name="prompt_uninstall_netfix">Try to say \"uninstall the netflix\"</string>
+    <string name="prompt_setup_network">Try to say \"set up the network\"</string>
+    <string name="prompt_switch_to_dtv">Try to say \"switch to dtv\"</string>
+    <string name="prompt_channel_to_bbc">Try to say \"channel to BBC\"</string>
+    <string name="query_no_content_found">No relative content found</string>
+    <string name="query_app_title">Found following app relative to</string>
+    <string name="query_video_title">Found following video relative to</string>
+    <string name="data_loading">loading</string>
 </resources>

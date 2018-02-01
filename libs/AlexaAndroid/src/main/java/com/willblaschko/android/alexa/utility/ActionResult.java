@@ -3,8 +3,6 @@ package com.willblaschko.android.alexa.utility;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.amazon.identity.auth.device.dataobject.AppInfo;
-
 import java.util.ArrayList;
 
 /**
