@@ -92,13 +92,13 @@ public class KKController {
         return list;
     }
 
-    public boolean openApp(String packageName){
+/*    public boolean openApp(String packageName){
         boolean ret = true;
         PackageManager packageManager = mContext.getPackageManager();
         Intent intent = packageManager.getLaunchIntentForPackage(packageName);
         mContext.startActivity(intent);
         return ret;
-    }
+    }*/
 
     private static void executePowerIntent() {
         Intent powerOffIntent = new Intent("android.intent.action.ACTION_REQUEST_SHUTDOWN");

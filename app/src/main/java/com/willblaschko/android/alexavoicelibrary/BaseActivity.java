@@ -29,6 +29,7 @@ import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPreviou
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceAllItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceEnqueuedItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsStopItem;
+import com.willblaschko.android.alexa.interfaces.response.ResponseParser;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
@@ -213,7 +214,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         public void start() {
             startTime = System.currentTimeMillis();
             Log.i(TAG, "Event Start");
-            setState(STATE_PROCESSING);
+            setState(STATE_PROCESSING); //it only changes the UI
         }
 
         @Override
@@ -270,9 +271,12 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             }
             avsQueue.addAll(response);
         }
-        if (checkAfter) {
-            checkQueue();
-        }
+        Log.d(TAG, "handleResponse: checkAfter is >" + checkAfter);
+        checkQueue();
+       /* if (checkAfter) {
+        } else {
+
+        }*/
     }
 
 
@@ -284,7 +288,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
      * the new items are added to the list, it should have no function here.
      */
     private void checkQueue() {
-
+        Log.d(TAG, "checkQueue: check queue");
         //if we're out of things, hang up the phone and move on
         if (avsQueue.size() == 0) {
             setState(STATE_FINISHED);
@@ -299,7 +303,19 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             return;
         }
 
-        final AvsItem current = avsQueue.get(0);
+        AvsItem current = avsQueue.get(0);
+        AvsItem lastItem = avsQueue.get(avsQueue.size() - 1);
+        for (AvsItem avsItem : avsQueue) {
+            Log.d(TAG, "checkQueue: avsItem is " + avsItem);
+        }
+        if (current instanceof AvsPlayRemoteItem && audioPlayer.isPlaying()) {
+            Log.d(TAG, "checkQueue: pause remote audio");
+//            audioPlayer.pause();
+            audioPlayer.stop();
+            current = avsQueue.get(1);
+            //pause this and play other
+
+        }
 
         Log.i(TAG, "Item type " + current.getClass().getName());
 
@@ -315,10 +331,12 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             }
         } else if (current instanceof AvsSpeakItem) {
             //play a sound file
-            if (!audioPlayer.isPlaying()) {
-                audioPlayer.playItem((AvsSpeakItem) current);
-            }
+//            if (!audioPlayer.isPlaying()) {
+//            }
+            audioPlayer.playItem((AvsSpeakItem) current);
             setState(STATE_SPEAKING);
+            // show display card info
+            Log.d(TAG, "checkQueue:  and directive is " + ResponseParser.kkDirective);
         } else if (current instanceof AvsStopItem) {
             //stop our play
             audioPlayer.stop();
@@ -376,7 +394,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 public void run() {
                     new AlertDialog.Builder(BaseActivity.this)
                             .setTitle("Error")
-                            .setMessage(((AvsResponseException) current).getDirective().getPayload().getCode() + ": " + ((AvsResponseException) current).getDirective().getPayload().getDescription())
+//                            .setMessage(((AvsResponseException) current).getDirective().getPayload().getCode() + ": " + ((AvsResponseException) current).getDirective().getPayload().getDescription())
                             .setPositiveButton(android.R.string.ok, null)
                             .show();
                 }

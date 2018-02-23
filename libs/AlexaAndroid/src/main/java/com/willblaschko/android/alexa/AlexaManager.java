@@ -58,7 +58,7 @@ public class AlexaManager {
     private SpeechSendAudio mSpeechSendAudio;
     private VoiceHelper mVoiceHelper;
     private String urlEndpoint;
-    private Context mContext;
+    private static Context mContext;
     private boolean mIsRecording = false;
     public static boolean getKKSkill = false;
 
@@ -614,6 +614,10 @@ public class AlexaManager {
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
                 response.body().close();
                 Log.d(TAG, "success: ---------------------");
+                //start to pause playing audio
+//                final AlexaAudioPlayer audioPlayer = AlexaAudioPlayer.getInstance(mContext);
+//                audioPlayer.release();
+//                audioPlayer.play();
                 if (!TextUtils.isEmpty(ResponseParser.kkDirective) && getKKSkill) {
                     Log.d(TAG, "success: kkDirective is " + ResponseParser.kkDirective);
                     getKKSkill = false;

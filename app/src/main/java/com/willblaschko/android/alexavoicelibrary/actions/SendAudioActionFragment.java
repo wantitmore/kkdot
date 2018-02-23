@@ -138,27 +138,30 @@ public class SendAudioActionFragment extends BaseListenerFragment {
             Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
                 try {
-                    final float rmsdb = recorder.getRmsdb();
-                    if(recorderView != null) {
-                        recorderView.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                recorderView.setRmsdbLevel(rmsdb);
-//                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
-                                if (rmsdb <= 0) {
-                                    mMicrophone.setVisibility(View.VISIBLE);
-                                } else {
-                                    mMicrophone.setVisibility(View.VISIBLE);
+                    Log.d(TAG, "writeTo: record is null? " + recorder);
+                    if (recorder != null) {
+                        final float rmsdb = recorder.getRmsdb();
+                        if(recorderView != null) {
+                            recorderView.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    recorderView.setRmsdbLevel(rmsdb);
+    //                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+                                    if (rmsdb <= 0) {
+                                        mMicrophone.setVisibility(View.VISIBLE);
+                                    } else {
+                                        mMicrophone.setVisibility(View.VISIBLE);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                     if(sink != null && recorder != null) {
                         sink.write(recorder.consumeRecording());
                     }
                     if(BuildConfig.DEBUG){
-                        Log.i(TAG, "Received audio");
-                        Log.i(TAG, "RMSDB: " + rmsdb);
+//                        Log.i(TAG, "Received audio");
+//                        Log.i(TAG, "RMSDB: " + rmsdb);
                     }
                 } catch (Exception e) {
                     Log.d(TAG, "writeTo: error is " + e.getMessage());
@@ -199,7 +202,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         public void onReceive(Context context, Intent intent) {
 
             Log.d(TAG, "onReceive: intent is " + intent.getAction());
-            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")&& recorder == null) {
+            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")/* && recorder == null*/) {
 //                AndroidSystemHandler.welcomeIntent = false;
                 startListening();
             }
