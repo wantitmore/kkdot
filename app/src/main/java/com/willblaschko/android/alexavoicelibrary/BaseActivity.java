@@ -61,6 +61,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private List<AvsItem> avsQueue = new ArrayList<>();
 
     private long startTime = 0;
+    public static long currentPosition = 0;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -309,10 +310,22 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             Log.d(TAG, "checkQueue: avsItem is " + avsItem);
         }
         if (current instanceof AvsPlayRemoteItem && audioPlayer.isPlaying()) {
-            Log.d(TAG, "checkQueue: pause remote audio");
+            currentPosition = audioPlayer.getCurrentPosition();
+            ((AvsPlayRemoteItem) current).setmStartOffset(currentPosition);
+            Log.d(TAG, "checkQueue: pause remote audio" + currentPosition);
 //            audioPlayer.pause();
+
             audioPlayer.stop();
-            current = avsQueue.get(1);
+            AlexaAudioPlayer.pauseStatus = false;
+            if (avsQueue.size() >= 2) {
+                /*sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_PAUSE);
+
+                avsQueue.remove(current);
+                Log.d(TAG, "checkQueue: ========");*/
+                Log.i(TAG, "Media pause command issued");
+                current = avsQueue.get(avsQueue.size() - 1);
+                AlexaAudioPlayer.pauseStatus = true;
+            }
             //pause this and play other
 
         }

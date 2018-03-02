@@ -28,4 +28,8 @@ public class AvsPlayRemoteItem extends AvsItem {
         return mStartOffset;
     }
 
+    public void setmStartOffset(long offset) {
+        mStartOffset = offset;
+    }
+
 }

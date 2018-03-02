@@ -209,6 +209,7 @@ public class ResponseParser {
                 return new AvsSpeakItem(directive.getPayload().getToken(), cid, audio.get(cid));
             case Directive.TYPE_PLAY:
                 String url = directive.getPayload().getAudioItem().getStream().getUrl();
+                Log.d(TAG, "parseDirective: url is " + url + "\n" + directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds());
                 if(url.contains("cid:")){
                     return new AvsPlayAudioItem(directive.getPayload().getToken(), url, audio.get(url));
                 }else{

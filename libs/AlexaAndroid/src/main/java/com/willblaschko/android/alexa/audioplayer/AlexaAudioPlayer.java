@@ -36,7 +36,8 @@ public class AlexaAudioPlayer {
     private Context mContext;
     private AvsItem mItem;
     private final List<Callback> mCallbacks = new ArrayList<>();
-    private long mCurrentPosition;
+    private long mCurrentPosition = 0;
+    public static boolean pauseStatus = true;
 
     /**
      * Create our new AlexaAudioPlayer
@@ -203,6 +204,13 @@ public class AlexaAudioPlayer {
                 getMediaPlayer().setAudioStreamType(AudioManager.STREAM_MUSIC);
                 //play new url
                 getMediaPlayer().setDataSource(playItem.getUrl());
+                if (mCurrentPosition >= 0) {
+//                    mMediaPlayer.prepareAsync();
+//                    getMediaPlayer().seekTo((int) mCurrentPosition + 8000);
+
+//                    mMediaPlayer.start();
+                }
+                Log.d(TAG, "play: currentPosition is " + mCurrentPosition);
             } catch (IOException e) {
                 e.printStackTrace();
                 //bubble up our error
@@ -381,11 +389,13 @@ public class AlexaAudioPlayer {
      */
     private MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         @Override
-        public void onPrepared(MediaPlayer mp) {
+        public void onPrepared(final MediaPlayer mp) {
             for (Callback callback : mCallbacks) {
                 callback.playerPrepared(mItem);
                 callback.playerProgress(mItem, mMediaPlayer.getCurrentPosition(), 0);
             }
+            Log.d(TAG, "onPrepared: mPreparedListener");
+//            mMediaPlayer.seekTo(20000);
             mMediaPlayer.start();
             new AsyncTask<Void, Void, Void>() {
                 @Override
@@ -395,6 +405,25 @@ public class AlexaAudioPlayer {
                             int pos = getMediaPlayer().getCurrentPosition();
                             final float percent = (float) pos / (float) getMediaPlayer().getDuration();
                             postProgress(percent);
+                            if (getCurrentItem() instanceof AvsPlayRemoteItem && pauseStatus) {
+                                AvsPlayRemoteItem currentItem = (AvsPlayRemoteItem) getCurrentItem();
+                                long startOffset = currentItem.getStartOffset();
+                                Log.d(TAG, "doInBackground: change progress " + startOffset);
+                                if (startOffset > 0) {
+                                    getMediaPlayer().seekTo((int) startOffset);
+                                    pauseStatus = false;
+                                }
+                            }
+//                            mMediaPlayer.seekTo();
+                            /*if (pos > 8000 && shouldStop) {
+                                Log.d(TAG, "doInBackground: pause in back " + pos);
+                                mMediaPlayer.pause();
+                                SystemClock.sleep(3000)
+                                shouldStop = false;
+                                mMediaPlayer.seekTo(16000);
+                                mMediaPlayer.start();
+                            }*/
+//                            Log.d(TAG, "doInBackground: duration is " + getMediaPlayer().getDuration() + ",current is " + pos);
                             try {
                                 Thread.sleep(10);
                             } catch (InterruptedException e) {

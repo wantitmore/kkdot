@@ -125,7 +125,9 @@ public class SendAudioActionFragment extends BaseListenerFragment {
 
     @Override
     public void startListening() {
+        Log.d(TAG, "startListening: ===");
         if(recorder == null){
+            Log.d(TAG, "startListening: ===2");
             recorder = new RawAudioRecorder(AUDIO_RATE);
         }
         recorder.start();
@@ -135,7 +137,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private DataRequestBody requestBody = new DataRequestBody() {
         @Override
         public void writeTo(BufferedSink sink) throws IOException {
-            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
+//            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
                 try {
                     Log.d(TAG, "writeTo: record is null? " + recorder);
@@ -179,6 +181,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     };
 
     private void stopListening(){
+        Log.d(TAG, "stopListening: --");
         if(recorder != null) {
             recorder.stop();
             recorder.release();

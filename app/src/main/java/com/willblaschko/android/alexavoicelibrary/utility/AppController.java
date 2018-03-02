@@ -31,7 +31,7 @@ public class AppController {
 //            }
                 MyAppInfo myAppInfo = new MyAppInfo();
                 myAppInfo.setAppName(packageInfo.packageName);
-                Log.d(TAG, "scanLocalInstallAppList: name is " + packageInfo.packageName);
+//                Log.d(TAG, "scanLocalInstallAppList: name is " + packageInfo.packageName);
                 if (packageInfo.applicationInfo.loadIcon(packageManager) == null) {
                     continue;
                 }
