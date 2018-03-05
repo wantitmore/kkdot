@@ -137,18 +137,18 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private DataRequestBody requestBody = new DataRequestBody() {
         @Override
         public void writeTo(BufferedSink sink) throws IOException {
-//            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
+            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
                 try {
                     Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
                         if(recorderView != null) {
+                            Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                             recorderView.post(new Runnable() {
                                 @Override
                                 public void run() {
                                     recorderView.setRmsdbLevel(rmsdb);
-    //                                Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                                     if (rmsdb <= 0) {
                                         mMicrophone.setVisibility(View.VISIBLE);
                                     } else {

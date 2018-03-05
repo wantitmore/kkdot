@@ -329,6 +329,14 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             //pause this and play other
 
         }
+        if (current instanceof AvsSpeakItem && audioPlayer.isPlaying()) {
+            Log.d(TAG, "checkQueue: speak item stop");
+            audioPlayer.stop();
+//            audioPlayer.removeCallback(alexaAudioPlayerCallback);
+            current = avsQueue.get(avsQueue.size() - 1);
+//            avsQueue.remove(current);
+            avsQueue.clear();
+        }
 
         Log.i(TAG, "Item type " + current.getClass().getName());
 
