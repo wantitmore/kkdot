@@ -36,6 +36,7 @@ public class Directive {
     public static final String TYPE_MEDIA_PREVIOUS = "PreviousCommandIssue";
     public static final String TYPE_EXCEPTION = "Exception";
     public static final String TYPE_SET_ENDPOINT = "SetEndpoint";
+    public static final String TYPE_RENDER_TEMPLATE = "RenderTemplate";
 
     private static final String PLAY_BEHAVIOR_REPLACE_ALL = "REPLACE_ALL";
     private static final String PLAY_BEHAVIOR_ENQUEUE = "ENQUEUE";

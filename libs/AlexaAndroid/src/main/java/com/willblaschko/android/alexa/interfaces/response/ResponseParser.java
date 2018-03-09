@@ -1,10 +1,14 @@
 package com.willblaschko.android.alexa.interfaces.response;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.willblaschko.android.alexa.AlexaManager;
+import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.interfaces.AvsException;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
@@ -28,11 +32,11 @@ import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsExpectSpeec
 import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsStopCaptureItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
-import com.willblaschko.android.alexa.utility.Bean;
 
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -143,9 +147,13 @@ public class ResponseParser {
                     Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
                     try {
                         Gson gson = new Gson();
-                        Bean bean = gson.fromJson(directive, Bean.class);
-                        String subTitle = bean.getDirective().getPayload().getTitle().getSubTitle();
-                        String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
+                        Template1Bean template1Bean = gson.fromJson(directive, Template1Bean.class);
+                        if ("RenderTemplate".equals(template1Bean.getDirective().getHeader().getName())) {
+                            Log.d(TAG, "parseResponse: RenderTemplate");
+                            EventBus.getDefault().post(directive);
+                        }
+                        String subTitle = template1Bean.getDirective().getPayload().getTitle().getSubTitle();
+                        String mainTitle = template1Bean.getDirective().getPayload().getTitle().getMainTitle();
                         Log.d(TAG, "onCreate: " + subTitle);
                         if (subTitle.contains("newFun")) {
                             //execute skill
@@ -243,10 +251,22 @@ public class ResponseParser {
                 return new AvsSetEndpointItem(directive.getPayload().getToken(), directive.getPayload().getEndpoint());
             case Directive.TYPE_EXCEPTION:
                 return new AvsResponseException(directive);
+            case Directive.TYPE_RENDER_TEMPLATE:
+                // display the info to screen
+                Log.d(TAG, "parseDirective: TYPE_RENDER_TEMPLATE");
+//                showDisplayCard(directive)
+
             default:
                 Log.e(TAG, "Unknown type found");
                 return null;
         }
+    }
+
+    public static void showDisplayCard(Directive directive) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        Message message = Message.obtain();
+        message.obj = directive;
+        handler.sendMessage(message);
     }
 
     public static String getBoundary(Response response) throws IOException {

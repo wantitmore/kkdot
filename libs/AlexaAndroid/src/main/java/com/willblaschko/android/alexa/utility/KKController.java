@@ -9,6 +9,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.mstar.android.tv.TvCommonManager;
 import com.willblaschko.android.alexa.R;
+import com.willblaschko.android.alexa.beans.Template1Bean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +24,10 @@ public class KKController {
     //    ResponseParser
     public static void controlAction(Context context, String directive) {
         Gson gson = new Gson();
-        Bean bean = gson.fromJson(directive, Bean.class);
-        String mainTitle = bean.getDirective().getPayload().getTitle().getMainTitle();
+        Template1Bean template1Bean = gson.fromJson(directive, Template1Bean.class);
+        String mainTitle = template1Bean.getDirective().getPayload().getTitle().getMainTitle();
         Log.d(TAG, "controlKK: " + mainTitle);
-        String textField = bean.getDirective().getPayload().getTextField();
+        String textField = template1Bean.getDirective().getPayload().getTextField();
         if (mainTitle.contains("PowerIntent")) {// power off TV
             executePowerIntent();
         } else if (mainTitle.contains("InputIntent")) {

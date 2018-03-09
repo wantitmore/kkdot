@@ -121,7 +121,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
         @Override
         public void playerPrepared(AvsItem pendingItem) {
-
         }
 
         @Override

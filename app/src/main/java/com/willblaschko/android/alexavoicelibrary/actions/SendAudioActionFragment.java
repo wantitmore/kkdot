@@ -11,21 +11,36 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
+import com.willblaschko.android.alexa.beans.Template1Bean;
+import com.willblaschko.android.alexa.beans.Template2Bean;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.recorderview.RecorderView;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 import ee.ioc.phon.android.speechutils.RawAudioRecorder;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import okio.BufferedSink;
 
 
@@ -43,6 +58,12 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private RecorderView recorderView;
     private AlexaReceiver alexaReceiver;
     private ImageView mMicrophone;
+    private TextView mMainTitle;
+    private TextView mSubTitle;
+    private TextView mContent;
+    private ImageView mImageView;
+    private LinearLayout mTemplate2;
+    private LinearLayout mMicroLayout;
 
     @Nullable
     @Override
@@ -55,12 +76,18 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         super.onViewCreated(view, savedInstanceState);
         recorderView = (RecorderView) view.findViewById(R.id.recorder);
         mMicrophone = (ImageView) view.findViewById(R.id.iv_microphone);
+        mMicroLayout = (LinearLayout) view.findViewById(R.id.ll_micro);
+        mTemplate2 = (LinearLayout) view.findViewById(R.id.ll_displayTemplate2);
+        mMainTitle = (TextView) view.findViewById(R.id.tv_mainTitle);
+        mSubTitle = (TextView) view.findViewById(R.id.tv_subTitle);
+        mContent = (TextView) view.findViewById(R.id.tv_content);
+        mImageView = (ImageView) view.findViewById(R.id.iv_icon);
         recorderView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(recorder == null) {
+                if (recorder == null) {
                     startListening();
-                }else{
+                } else {
                     stopListening();
                 }
             }
@@ -70,12 +97,14 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         getContext().registerReceiver(alexaReceiver, filter);
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
+        mMicroLayout.setVisibility(View.VISIBLE);
         if (ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -96,7 +125,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
             case MY_PERMISSIONS_REQUEST_RECORD_AUDIO: {
                 // If request is cancelled, the result arrays are empty.
                 if (!(grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED)){
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     getActivity().getSupportFragmentManager().beginTransaction().remove(this).commit();
                 }
             }
@@ -110,13 +139,14 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         if (alexaReceiver != null) {
             getContext().unregisterReceiver(alexaReceiver);
         }
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         //tear down our recorder on stop
-        if(recorder != null){
+        if (recorder != null) {
             recorder.stop();
             recorder.release();
             recorder = null;
@@ -126,7 +156,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     @Override
     public void startListening() {
         Log.d(TAG, "startListening: ===");
-        if(recorder == null){
+        if (recorder == null) {
             Log.d(TAG, "startListening: ===2");
             recorder = new RawAudioRecorder(AUDIO_RATE);
         }
@@ -143,7 +173,7 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                     Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-                        if(recorderView != null) {
+                        if (recorderView != null) {
                             Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                             recorderView.post(new Runnable() {
                                 @Override
@@ -158,10 +188,10 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                             });
                         }
                     }
-                    if(sink != null && recorder != null) {
+                    if (sink != null && recorder != null) {
                         sink.write(recorder.consumeRecording());
                     }
-                    if(BuildConfig.DEBUG){
+                    if (BuildConfig.DEBUG) {
 //                        Log.i(TAG, "Received audio");
 //                        Log.i(TAG, "RMSDB: " + rmsdb);
                     }
@@ -180,9 +210,9 @@ public class SendAudioActionFragment extends BaseListenerFragment {
 
     };
 
-    private void stopListening(){
+    private void stopListening() {
         Log.d(TAG, "stopListening: --");
-        if(recorder != null) {
+        if (recorder != null) {
             recorder.stop();
             recorder.release();
             recorder = null;
@@ -199,20 +229,88 @@ public class SendAudioActionFragment extends BaseListenerFragment {
         return R.raw.code_audio;
     }
 
-   public class AlexaReceiver extends BroadcastReceiver {
+    public class AlexaReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
 
             Log.d(TAG, "onReceive: intent is " + intent.getAction());
-            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")/* && recorder == null*/) {
+            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")/* && recorder == null*/) {
 //                AndroidSystemHandler.welcomeIntent = false;
                 startListening();
             }
-            if(Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {
+            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {
                 stopListening();
             }
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handleEvent(String directive) {
+        // show displaycard info
+        boolean template1 = directive.contains("\"type\":\"BodyTemplate2\"");
+        Log.d(TAG, "handleEvent: directive is " + directive + "\n\r ==" + template1);
+        mMicroLayout.setVisibility(View.GONE);
+        mTemplate2.setVisibility(View.VISIBLE);
+        Gson gson = new Gson();
+
+        if (directive.contains("\"type\":\"BodyTemplate1\"")) {
+            Template1Bean template1Bean = gson.fromJson(directive, Template1Bean.class);
+            Template1Bean.DirectiveBean directiveBean = template1Bean.getDirective();
+            Template1Bean.DirectiveBean.PayloadBean payload = directiveBean.getPayload();
+            String type = directiveBean.getPayload().getType();
+            String subTitle = payload.getTitle().getSubTitle();
+            String mainTitle = payload.getTitle().getMainTitle();
+            String content = payload.getTextField();
+            mSubTitle.setText(subTitle);
+            mImageView.setVisibility(View.GONE);
+            Log.d(TAG, "handleEvent: main title is " +mainTitle + ", subTitle is " + subTitle);
+            mMainTitle.setText(mainTitle);
+            mContent.setText(content);
+        } else if (directive.contains("\"type\":\"BodyTemplate2\"")) {
+            Template2Bean template2Bean = gson.fromJson(directive, Template2Bean.class);
+            Template2Bean.DirectiveBean directiveBean = template2Bean.getDirective();
+            Template2Bean.DirectiveBean.PayloadBean payload = directiveBean.getPayload();
+            String type = directiveBean.getPayload().getType();
+            String mainTitle = payload.getTitle().getMainTitle();
+            String content = payload.getTextField();
+//            String imgUrl = payload.getImage().getSourcesBean().getUrl()//null pointer
+            List<Template2Bean.DirectiveBean.PayloadBean.ImageBean.SourcesBean> sourcesBeans = payload.getImage().getSources();//null pointer
+            for (Template2Bean.DirectiveBean.PayloadBean.ImageBean.SourcesBean bean : sourcesBeans) {
+                String url = bean.getUrl();
+                if (!TextUtils.isEmpty(url)) {
+                    Log.d(TAG, "handleEvent: load image == " + url);
+                    Glide.with(getActivity()).load(url).into(mImageView);
+                    break;
+                }
+            }
+            mImageView.setVisibility(View.VISIBLE);
+            mMainTitle.setText(mainTitle);
+            mContent.setText(content);
+        }
+    }
+    public void getDatasync(final String url){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    OkHttpClient client = new OkHttpClient();//创建OkHttpClient对象
+                    Request request = new Request.Builder()
+                            .url(url)//请求接口。如果需要传参拼接到接口后面。
+                            .build();//创建Request 对象
+                    Response response;
+                    response = client.newCall(request).execute();//得到Response 对象
+                    if (response.isSuccessful()) {
+                        Log.d("kwwl","response.code()=="+response.code());
+                        Log.d("kwwl","response.message()=="+response.message());
+                        Log.d("kwwl","res=="+response.body().string());
+                        //此时的代码执行在子线程，修改UI的操作请使用handler跳转到UI线程。
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
 }
+

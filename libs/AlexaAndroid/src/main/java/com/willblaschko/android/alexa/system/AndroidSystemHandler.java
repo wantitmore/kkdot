@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -223,6 +224,14 @@ public class AndroidSystemHandler {
 
 
     }
+
+    public void showDisplayCard(Directive directive) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        Message message = Message.obtain();
+        message.obj = directive;
+        handler.sendMessage(message);
+    }
+
     public void controlKK(String directive) {
         KKController.controlAction(context, directive);
         /*Looper.prepare();

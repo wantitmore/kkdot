@@ -1,10 +1,10 @@
-package com.willblaschko.android.alexa.utility;
+package com.willblaschko.android.alexa.beans;
 
 /**
  * Created by user001 on 2018-1-12.
  */
 
-public class Bean {
+public class Template1Bean {
 
     /**
      * directive : {"header":{"namespace":"TemplateRuntime","name":"RenderTemplate","messageId":"9e15699d-619a-4059-8004-21e3a95facc4","dialogRequestId":"dialogRequest-321"},"payload":{"type":"BodyTemplate1","token":"339df78a-633c-4f53-ab2d-d96e48dc114a","title":{"subTitle":"newFun","mainTitle":"SessionSpeechlet - WhatsMyColorIntent"},"textField":"SessionSpeechlet - I'm not sure what your favorite color is. You can say, my favorite color is red."}}
