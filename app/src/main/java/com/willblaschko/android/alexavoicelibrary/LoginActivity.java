@@ -55,7 +55,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                         //call our function again
                         Log.d(TAG, "onSuccess: ");
                         //show things to try
-
+                        
                     }
 
                 });
