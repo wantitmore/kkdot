@@ -36,3 +36,5 @@ javadoc/
 
 #NDK
 obj/
+
+.svn

@@ -350,6 +350,7 @@ public class AlexaManager {
                                 protected AvsResponse doInBackground(Void... params) {
                                     try {
                                         getSpeechSendAudio().sendAudio(url, token, requestBody, new AsyncEventHandler(AlexaManager.this, callback));
+                                        Log.d(TAG, "doInBackground: ----authorth success");
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                         //bubble up the error
@@ -658,7 +659,7 @@ public class AlexaManager {
         }
     }
 
-    private abstract static class ImplAuthorizationCallback<E> implements AuthorizationCallback{
+    public abstract static class ImplAuthorizationCallback<E> implements AuthorizationCallback{
 
         AsyncCallback<E, Exception> callback;
 

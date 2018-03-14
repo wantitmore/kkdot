@@ -1,5 +1,7 @@
 package com.willblaschko.android.alexavoicelibrary;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -12,6 +14,7 @@ import android.widget.TextView;
 import com.willblaschko.android.alexavoicelibrary.actions.ActionsFragment;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
 import com.willblaschko.android.alexavoicelibrary.actions.SendAudioActionFragment;
+import com.willblaschko.android.alexavoicelibrary.global.Constants;
 import com.willblaschko.android.alexavoicelibrary.utility.AppController;
 
 import static com.willblaschko.android.alexavoicelibrary.R.id.frame;
@@ -31,8 +34,12 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        SharedPreferences alexa = getSharedPreferences(Constants.ALEXA, MODE_PRIVATE);
+        boolean needLogin = alexa.getBoolean(Constants.LOGIN, true);
+        if (needLogin) {
+            // show education login UI
+            startActivity(new Intent(this, LoginActivity.class));
+        }
         setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
 

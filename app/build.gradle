@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 
 if (file('signing.gradle').exists()) {
     apply from: 'signing.gradle'
-}else{
+} else {
 //    throw new TaskExecutionException(null, new Exception("Unable to find signing.gradle, please replace Android buildTypes > signing configs with your own configuration."));
 }
 
@@ -53,6 +53,7 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.android.support:recyclerview-v7:23.0.1'
@@ -64,4 +65,5 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.2'
     compile files('libs/mstar.jar')
 }
+
 
