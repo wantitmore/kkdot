@@ -23,6 +23,9 @@ public class LoginActivity extends Activity implements View.OnClickListener{
     private Button mCancel;
     private static final String TAG = "LoginActivity";
     private AlexaManager mAlexaManager;
+    private View mloginLayout;
+    private View mThinsTryLayout;
+    private Button mDone;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,11 +38,15 @@ public class LoginActivity extends Activity implements View.OnClickListener{
     private void initListener() {
         mLogin.setOnClickListener(this);
         mCancel.setOnClickListener(this);
+        mDone.setOnClickListener(this);
     }
 
     private void initView() {
+        mloginLayout = findViewById(R.id.ll_login);
+        mThinsTryLayout = findViewById(R.id.ll_things_to_try);
         mLogin = (Button) findViewById(R.id.btn_login);
         mCancel = (Button) findViewById(R.id.btn_cancel);
+        mDone = (Button) findViewById(R.id.btn_done);
     }
 
     @Override
@@ -55,12 +62,16 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                         //call our function again
                         Log.d(TAG, "onSuccess: ");
                         //show things to try
-                        
+                        mThinsTryLayout.setVisibility(View.VISIBLE);
+                        mloginLayout.setVisibility(View.GONE);
                     }
 
                 });
                 break;
             case R.id.btn_cancel:
+                break;
+            case R.id.btn_done:
+                finish();
                 break;
         }
     }

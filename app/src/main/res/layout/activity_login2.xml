@@ -5,46 +5,32 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
-    android:orientation="horizontal"
     tools:context="com.willblaschko.android.alexavoicelibrary.LoginActivity">
-
     <LinearLayout
-        android:layout_weight="2"
-        android:layout_width="0dp"
-        android:gravity="center"
+        android:id="@+id/ll_login"
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <ImageView
-            android:id="@+id/iv_logo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/logo"
-            />
-        <TextView
-            android:id="@+id/splash"
-            android:text="@string/splash_text1"
-            android:layout_width="wrap_content"
+        <include layout="@layout/login"/>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:id="@+id/ll_things_to_try"
+        android:visibility="gone"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <include
+            android:layout_weight="2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            layout="@layout/things_to_try"/>
+        <Button
+            android:id="@+id/btn_done"
+            android:text="@string/done"
+            android:layout_weight="1"
+            android:layout_width="0dp"
             android:layout_height="wrap_content" />
-        <TextView
-            android:text="@string/splash_text2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_weight="1"
-        android:layout_width="0dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:layout_height="match_parent">
-        <Button
-            android:id="@+id/btn_login"
-            android:text="@string/login_amazon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/btn_cancel"
-            android:text="@string/cancel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
 </LinearLayout>

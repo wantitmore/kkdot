@@ -16,5 +16,8 @@
     <string name="splash_text2">All you have to do is ask Alexa.</string>
     <string name="login_amazon">login with amazon</string>
     <string name="cancel">Cancel</string>
-
+    <string name="things_to_try">You＇ready to use Alexa,Here are some things to try:</string>
+    <string name="learn_more">To learn more and access additional feature,</string>
+    <string name="down_app">download the Alexa app on Goolgle Play or the App Store.</string>
+    <string name="done">Done</string>
 </resources>
