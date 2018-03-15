@@ -64,6 +64,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                         //show things to try
                         mThinsTryLayout.setVisibility(View.VISIBLE);
                         mloginLayout.setVisibility(View.GONE);
+                        getSharedPreferences(Constants.ALEXA, MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
                     }
 
                 });
@@ -92,7 +93,6 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                         callback.onSuccess();
                     }
                     Log.d(TAG, "success: --------");
-                    getSharedPreferences(Constants.ALEXA, MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
                     finish();
                 }else{
                     //otherwise start the authorization process
