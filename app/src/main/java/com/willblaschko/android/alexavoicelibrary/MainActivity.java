@@ -39,6 +39,7 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
         if (needLogin) {
             // show education login UI
             startActivity(new Intent(this, LoginActivity.class));
+            finish();
         }
         setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
