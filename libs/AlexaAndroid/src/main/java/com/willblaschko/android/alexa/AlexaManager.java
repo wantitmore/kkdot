@@ -473,6 +473,7 @@ public class AlexaManager {
         } else {
             event = Event.getSpeechFinishedEvent(item.getToken());
         }
+        Log.d(TAG, "sendPlaybackFinishedEvent: -----" + event);
         sendEvent(event, callback);
     }
 

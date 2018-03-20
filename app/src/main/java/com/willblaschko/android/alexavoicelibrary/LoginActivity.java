@@ -70,6 +70,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 });
                 break;
             case R.id.btn_cancel:
+                finish();
                 break;
             case R.id.btn_done:
                 finish();
@@ -106,7 +107,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 if(callback != null) {
                     callback.onError(new Exception(error));
                 }
-                Log.d(TAG, "failure: ------");
+                Log.d(TAG, "failure: ------ " + error.getMessage());
             }
 
             @Override
@@ -114,6 +115,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
 
             }
         });
-
     }
+
+
 }

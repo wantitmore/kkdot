@@ -408,7 +408,7 @@ public class AlexaAudioPlayer {
                             if (getCurrentItem() instanceof AvsPlayRemoteItem && pauseStatus) {
                                 AvsPlayRemoteItem currentItem = (AvsPlayRemoteItem) getCurrentItem();
                                 long startOffset = currentItem.getStartOffset();
-                                Log.d(TAG, "doInBackground: change progress " + startOffset);
+//                                Log.d(TAG, "doInBackground: change progress " + startOffset);
                                 if (startOffset > 0) {
                                     getMediaPlayer().seekTo((int) startOffset);
                                     pauseStatus = false;

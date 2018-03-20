@@ -10,6 +10,10 @@
         <item name="android:textColorPrimary">#fff</item>
         <item name="android:textColorSecondary">#ccc</item>
         <item name="android:background">#00000000</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
     <style name="Theme.Transparent" parent="Theme.AppCompat.NoActionBar">
@@ -19,6 +23,21 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <style name="ButtonStyle">
+        <item name="android:background">@drawable/bg_button</item>
+        <item name="android:layout_width">316dp</item>
+        <item name="android:layout_height">46dp</item>
+    </style>
+
+    <style name="ThingsTry">
+        <item name="android:layout_marginStart">3dp</item>
+        <item name="android:layout_marginEnd">3dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:textColor">#eeeeee</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
     </style>
 
 </resources>

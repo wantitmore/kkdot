@@ -8,7 +8,10 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.willblaschko.android.alexa.AlexaManager;
+import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
+import com.willblaschko.android.alexa.beans.Template2Bean;
+import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.interfaces.AvsException;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
@@ -37,6 +40,8 @@ import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.greenrobot.eventbus.EventBus;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -68,6 +73,13 @@ public class ResponseParser {
 
     private static final Pattern PATTERN = Pattern.compile("<(.*?)>");
     public static String kkDirective;
+
+    private final static HashMap<String, Class> mRenderTypeMap = new HashMap() {{
+        put("BodyTemplate1", Template1Bean.class);
+        put("BodyTemplate2", Template2Bean.class);
+        put("ListTemplate1", ListTemplate1Bean.class);
+        put("WeatherTemplate", WeatherTemplateBean.class);
+    }};
 
     /**
      * Get the AvsItem associated with a Alexa API post/get, this will contain a list of {@link AvsItem} directives,
@@ -143,9 +155,24 @@ public class ResponseParser {
                 } else {
                     // get the json directive
                     String directive = data.toString(Charset.defaultCharset().displayName());
-                    boolean isCardData = isCard(headers);
+                    boolean isCardData = isCard(directive);
                     Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
-                    try {
+                    if (isCardData) {
+                        Class targetClazz = Template1Bean.class;
+                        try {
+                            JSONObject jsonObject = new JSONObject(directive);
+                            String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
+                            targetClazz = mRenderTypeMap.get(renderType);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        Gson gson = new Gson();
+                        Object renderObj = gson.fromJson(directive, targetClazz);
+                        EventBus.getDefault().post(renderObj);
+                    } else {
+                        EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
+                    }
+                    /*try {
                         Gson gson = new Gson();
                         Template1Bean template1Bean = gson.fromJson(directive, Template1Bean.class);
                         if ("RenderTemplate".equals(template1Bean.getDirective().getHeader().getName())) {
@@ -162,7 +189,7 @@ public class ResponseParser {
                         }
                     } catch (RuntimeException e) {
                         e.printStackTrace();
-                    }
+                    }*/
                     directives.add(getDirective(directive));
                 }
                 count++;
@@ -338,10 +365,7 @@ public class ResponseParser {
     /**
      * Check if the directive controls KK
      */
-    private static boolean isCard(String headers) {
-        if (headers.contains("RenderTemplate")) {
-            return true;
-        }
-        return false;
+    private static boolean isCard(String response) {
+        return response.contains("RenderTemplate");
     }
 }

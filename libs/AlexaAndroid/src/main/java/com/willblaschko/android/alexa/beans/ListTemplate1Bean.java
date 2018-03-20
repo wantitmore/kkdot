@@ -1,19 +1,16 @@
 package com.willblaschko.android.alexa.beans;
 
+
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by user001 on 2018-3-8.
- */
-
-public class Template2Bean implements Parcelable {
+public class ListTemplate1Bean implements Parcelable {
 
     /**
-     * directive : {"header":{"namespace":"TemplateRuntime","name":"RenderTemplate","messageId":"cc5c9ce1-9bf7-4d71-99b5-f3cf1adcb600","dialogRequestId":"dialogRequest-321"},"payload":{"type":"BodyTemplate2","token":"552f8652-b1d2-4aba-816c-477be3626ca4","title":{"mainTitle":"How many inches in a parsec?"},"textField":"1 parsec = 1,214,800,000,000,000,000 inches.","image":{"sources":[{"size":"SMALL","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"MEDIUM","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"LARGE","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"}]}}}
+     * directive : {"header":{"namespace":"TemplateRuntime","name":"RenderTemplate","messageId":"ef347560-acfb-495a-8130-e8952c167906","dialogRequestId":"dialogRequest-321"},"payload":{"type":"ListTemplate1","token":"1ba557b9-69c6-4179-99ee-e8dfc702ea40","listItems":[{"leftTextField":"1.","rightTextField":"eggs"},{"leftTextField":"2.","rightTextField":"horn"},{"leftTextField":"3.","rightTextField":"google dlna"}],"title":{"mainTitle":"Shopping List"}}}
      */
 
     private DirectiveBean directive;
@@ -28,8 +25,8 @@ public class Template2Bean implements Parcelable {
 
     public static class DirectiveBean implements Parcelable {
         /**
-         * header : {"namespace":"TemplateRuntime","name":"RenderTemplate","messageId":"cc5c9ce1-9bf7-4d71-99b5-f3cf1adcb600","dialogRequestId":"dialogRequest-321"}
-         * payload : {"type":"BodyTemplate2","token":"552f8652-b1d2-4aba-816c-477be3626ca4","title":{"mainTitle":"How many inches in a parsec?"},"textField":"1 parsec = 1,214,800,000,000,000,000 inches.","image":{"sources":[{"size":"SMALL","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"MEDIUM","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"LARGE","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"}]}}
+         * header : {"namespace":"TemplateRuntime","name":"RenderTemplate","messageId":"ef347560-acfb-495a-8130-e8952c167906","dialogRequestId":"dialogRequest-321"}
+         * payload : {"type":"ListTemplate1","token":"1ba557b9-69c6-4179-99ee-e8dfc702ea40","listItems":[{"leftTextField":"1.","rightTextField":"eggs"},{"leftTextField":"2.","rightTextField":"horn"},{"leftTextField":"3.","rightTextField":"google dlna"}],"title":{"mainTitle":"Shopping List"}}
          */
 
         private HeaderBean header;
@@ -55,7 +52,7 @@ public class Template2Bean implements Parcelable {
             /**
              * namespace : TemplateRuntime
              * name : RenderTemplate
-             * messageId : cc5c9ce1-9bf7-4d71-99b5-f3cf1adcb600
+             * messageId : ef347560-acfb-495a-8130-e8952c167906
              * dialogRequestId : dialogRequest-321
              */
 
@@ -134,18 +131,16 @@ public class Template2Bean implements Parcelable {
 
         public static class PayloadBean implements Parcelable {
             /**
-             * type : BodyTemplate2
-             * token : 552f8652-b1d2-4aba-816c-477be3626ca4
-             * title : {"mainTitle":"How many inches in a parsec?"}
-             * textField : 1 parsec = 1,214,800,000,000,000,000 inches.
-             * image : {"sources":[{"size":"SMALL","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"MEDIUM","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"},{"size":"LARGE","url":"https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png"}]}
+             * type : ListTemplate1
+             * token : 1ba557b9-69c6-4179-99ee-e8dfc702ea40
+             * listItems : [{"leftTextField":"1.","rightTextField":"eggs"},{"leftTextField":"2.","rightTextField":"horn"},{"leftTextField":"3.","rightTextField":"google dlna"}]
+             * title : {"mainTitle":"Shopping List"}
              */
 
             private String type;
             private String token;
             private TitleBean title;
-            private String textField;
-            private ImageBean image;
+            private List<ListItemsBean> listItems;
 
             public String getType() {
                 return type;
@@ -171,25 +166,17 @@ public class Template2Bean implements Parcelable {
                 this.title = title;
             }
 
-            public String getTextField() {
-                return textField;
+            public List<ListItemsBean> getListItems() {
+                return listItems;
             }
 
-            public void setTextField(String textField) {
-                this.textField = textField;
-            }
-
-            public ImageBean getImage() {
-                return image;
-            }
-
-            public void setImage(ImageBean image) {
-                this.image = image;
+            public void setListItems(List<ListItemsBean> listItems) {
+                this.listItems = listItems;
             }
 
             public static class TitleBean implements Parcelable {
                 /**
-                 * mainTitle : How many inches in a parsec?
+                 * mainTitle : Shopping List
                  */
 
                 private String mainTitle;
@@ -211,9 +198,6 @@ public class Template2Bean implements Parcelable {
                     this.mainTitle = mainTitle;
                 }
 
-                public TitleBean() {
-                }
-
                 @Override
                 public int describeContents() {
                     return 0;
@@ -223,6 +207,9 @@ public class Template2Bean implements Parcelable {
                 public void writeToParcel(Parcel dest, int flags) {
                     dest.writeString(this.mainTitle);
                     dest.writeString(this.subTitle);
+                }
+
+                public TitleBean() {
                 }
 
                 protected TitleBean(Parcel in) {
@@ -243,75 +230,29 @@ public class Template2Bean implements Parcelable {
                 };
             }
 
-            public static class ImageBean implements Parcelable {
-                private List<SourcesBean> sources;
+            public static class ListItemsBean implements Parcelable {
+                /**
+                 * leftTextField : 1.
+                 * rightTextField : eggs
+                 */
 
-                public List<SourcesBean> getSources() {
-                    return sources;
+                private String leftTextField;
+                private String rightTextField;
+
+                public String getLeftTextField() {
+                    return leftTextField;
                 }
 
-                public void setSources(List<SourcesBean> sources) {
-                    this.sources = sources;
+                public void setLeftTextField(String leftTextField) {
+                    this.leftTextField = leftTextField;
                 }
 
-                public static class SourcesBean implements Parcelable {
-                    /**
-                     * size : SMALL
-                     * url : https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png
-                     */
-
-                    private String size;
-                    private String url;
-
-                    public String getSize() {
-                        return size;
-                    }
-
-                    public void setSize(String size) {
-                        this.size = size;
-                    }
-
-                    public String getUrl() {
-                        return url;
-                    }
-
-                    public void setUrl(String url) {
-                        this.url = url;
-                    }
-
-                    @Override
-                    public int describeContents() {
-                        return 0;
-                    }
-
-                    @Override
-                    public void writeToParcel(Parcel dest, int flags) {
-                        dest.writeString(this.size);
-                        dest.writeString(this.url);
-                    }
-
-                    public SourcesBean() {
-                    }
-
-                    protected SourcesBean(Parcel in) {
-                        this.size = in.readString();
-                        this.url = in.readString();
-                    }
-
-                    public static final Creator<SourcesBean> CREATOR = new Creator<SourcesBean>() {
-                        @Override
-                        public SourcesBean createFromParcel(Parcel source) {
-                            return new SourcesBean(source);
-                        }
-
-                        @Override
-                        public SourcesBean[] newArray(int size) {
-                            return new SourcesBean[size];
-                        }
-                    };
+                public String getRightTextField() {
+                    return rightTextField;
                 }
 
-                public ImageBean() {
+                public void setRightTextField(String rightTextField) {
+                    this.rightTextField = rightTextField;
                 }
 
                 @Override
@@ -321,23 +262,27 @@ public class Template2Bean implements Parcelable {
 
                 @Override
                 public void writeToParcel(Parcel dest, int flags) {
-                    dest.writeList(this.sources);
+                    dest.writeString(this.leftTextField);
+                    dest.writeString(this.rightTextField);
                 }
 
-                protected ImageBean(Parcel in) {
-                    this.sources = new ArrayList<SourcesBean>();
-                    in.readList(this.sources, SourcesBean.class.getClassLoader());
+                public ListItemsBean() {
                 }
 
-                public static final Creator<ImageBean> CREATOR = new Creator<ImageBean>() {
+                protected ListItemsBean(Parcel in) {
+                    this.leftTextField = in.readString();
+                    this.rightTextField = in.readString();
+                }
+
+                public static final Creator<ListItemsBean> CREATOR = new Creator<ListItemsBean>() {
                     @Override
-                    public ImageBean createFromParcel(Parcel source) {
-                        return new ImageBean(source);
+                    public ListItemsBean createFromParcel(Parcel source) {
+                        return new ListItemsBean(source);
                     }
 
                     @Override
-                    public ImageBean[] newArray(int size) {
-                        return new ImageBean[size];
+                    public ListItemsBean[] newArray(int size) {
+                        return new ListItemsBean[size];
                     }
                 };
             }
@@ -352,8 +297,7 @@ public class Template2Bean implements Parcelable {
                 dest.writeString(this.type);
                 dest.writeString(this.token);
                 dest.writeParcelable(this.title, flags);
-                dest.writeString(this.textField);
-                dest.writeParcelable(this.image, flags);
+                dest.writeList(this.listItems);
             }
 
             public PayloadBean() {
@@ -363,8 +307,8 @@ public class Template2Bean implements Parcelable {
                 this.type = in.readString();
                 this.token = in.readString();
                 this.title = in.readParcelable(TitleBean.class.getClassLoader());
-                this.textField = in.readString();
-                this.image = in.readParcelable(ImageBean.class.getClassLoader());
+                this.listItems = new ArrayList<ListItemsBean>();
+                in.readList(this.listItems, ListItemsBean.class.getClassLoader());
             }
 
             public static final Creator<PayloadBean> CREATOR = new Creator<PayloadBean>() {
@@ -422,22 +366,22 @@ public class Template2Bean implements Parcelable {
         dest.writeParcelable(this.directive, flags);
     }
 
-    public Template2Bean() {
+    public ListTemplate1Bean() {
     }
 
-    protected Template2Bean(Parcel in) {
+    protected ListTemplate1Bean(Parcel in) {
         this.directive = in.readParcelable(DirectiveBean.class.getClassLoader());
     }
 
-    public static final Parcelable.Creator<Template2Bean> CREATOR = new Parcelable.Creator<Template2Bean>() {
+    public static final Parcelable.Creator<ListTemplate1Bean> CREATOR = new Parcelable.Creator<ListTemplate1Bean>() {
         @Override
-        public Template2Bean createFromParcel(Parcel source) {
-            return new Template2Bean(source);
+        public ListTemplate1Bean createFromParcel(Parcel source) {
+            return new ListTemplate1Bean(source);
         }
 
         @Override
-        public Template2Bean[] newArray(int size) {
-            return new Template2Bean[size];
+        public ListTemplate1Bean[] newArray(int size) {
+            return new ListTemplate1Bean[size];
         }
     };
 }

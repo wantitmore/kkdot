@@ -15,7 +15,6 @@ import com.willblaschko.android.alexavoicelibrary.actions.ActionsFragment;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
 import com.willblaschko.android.alexavoicelibrary.actions.SendAudioActionFragment;
 import com.willblaschko.android.alexavoicelibrary.global.Constants;
-import com.willblaschko.android.alexavoicelibrary.utility.AppController;
 
 import static com.willblaschko.android.alexavoicelibrary.R.id.frame;
 
@@ -42,7 +41,6 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
             finish();
         }
         setContentView(R.layout.activity_main);
-        getSupportActionBar().hide();
 
         //Listen for changes in the back stack
 //        getFragmentManager().addOnBackStackChangedListener(this);
@@ -56,7 +54,6 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
 //        ActionsFragment fragment = new ActionsFragment();
         SendAudioActionFragment fragment = new SendAudioActionFragment();
         loadFragment(fragment, false);
-        AppController.scanLocalInstallAppList(MainActivity.this.getPackageManager());
     }
 
     @Override

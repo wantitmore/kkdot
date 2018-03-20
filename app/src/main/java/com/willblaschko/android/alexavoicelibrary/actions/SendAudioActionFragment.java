@@ -24,9 +24,11 @@ import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
+import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.R;
+import com.willblaschko.android.alexavoicelibrary.display.DisplayCardActivity;
 import com.willblaschko.android.recorderview.RecorderView;
 
 import org.greenrobot.eventbus.EventBus;
@@ -167,14 +169,14 @@ public class SendAudioActionFragment extends BaseListenerFragment {
     private DataRequestBody requestBody = new DataRequestBody() {
         @Override
         public void writeTo(BufferedSink sink) throws IOException {
-            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
+//            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa" + ", recordView is " + recorderView);
             while (recorder != null && !recorder.isPausing()) {
                 try {
                     Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
                         if (recorderView != null) {
-                            Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+//                            Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                             recorderView.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -311,6 +313,22 @@ public class SendAudioActionFragment extends BaseListenerFragment {
                 }
             }
         }).start();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handleEvent(Object renderObj) {
+        Intent intent = new Intent(getActivity(), DisplayCardActivity.class);
+        if (renderObj instanceof Template1Bean) {
+            Log.d(SendTextActionFragment.class.getSimpleName(), "app Template1Bean = " + renderObj.toString());
+            intent.putExtra("args", (Template1Bean)renderObj);
+        } else if (renderObj instanceof Template2Bean) {
+            Log.d(SendTextActionFragment.class.getSimpleName(), "app Template2Bean = " + renderObj.toString());
+            intent.putExtra("args", (Template2Bean)renderObj);
+        } else if (renderObj instanceof WeatherTemplateBean) {
+            Log.d(SendTextActionFragment.class.getSimpleName(), "app weather = " + renderObj.toString());
+            intent.putExtra("args", (WeatherTemplateBean)renderObj);
+        }
+        startActivity(intent);
     }
 }
 

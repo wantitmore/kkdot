@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <FrameLayout
+        android:id="@+id/main_display_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView
+        android:id="@+id/voice_view_state"
+        android:layout_gravity="bottom|right"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginRight="90dp"/>
+
+    <LinearLayout
+        android:layout_width="350dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:id="@+id/linearLayout">
+        <EditText
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="60dp"
+            android:text="How many inches in a parsec?"
+            android:hint="How many inches in a parsec?"
+            android:background="@drawable/background_edittext"
+            android:id="@+id/search"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:textColor="@color/black"
+            android:textColorHint="#66000000">
+            <requestFocus/>
+        </EditText>
+        <View
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/button_search"
+            android:layout_marginLeft="@dimen/view_padding"
+            android:id="@+id/button"
+            android:focusable="true"
+            />
+    </LinearLayout>
+
+</FrameLayout>

@@ -20,16 +20,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <include
-            android:layout_weight="2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            layout="@layout/things_to_try"/>
-        <Button
-            android:id="@+id/btn_done"
-            android:text="@string/done"
             android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="wrap_content" />
+            android:background="@color/black"
+            android:layout_height="match_parent"
+            layout="@layout/things_to_try"/>
+        <LinearLayout
+            android:layout_width="353dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="@color/color_263238"
+            android:layout_height="match_parent">
+            <Button
+                android:id="@+id/btn_done"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:text="@string/done"
+                style="@style/ButtonStyle" />
+        </LinearLayout>
 
     </LinearLayout>
 
