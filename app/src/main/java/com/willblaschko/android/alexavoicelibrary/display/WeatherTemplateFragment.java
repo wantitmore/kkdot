@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -35,6 +36,9 @@ public class WeatherTemplateFragment extends Fragment {
         TextView subTitleView = (TextView) view.findViewById(R.id.sub_title);
         ImageView currentWeatherImgView = (ImageView) view.findViewById(R.id.today_img);
         TextView currentWeatherTv = (TextView) view.findViewById(R.id.current_weather);
+        TextView currentHighTempTv = (TextView) view.findViewById(R.id.current_high_temp);
+        TextView currentLowTempTv = (TextView) view.findViewById(R.id.current_low_temp);
+        LinearLayout weatherContainer = (LinearLayout) view.findViewById(R.id.week_day_container);
 
         WeatherTemplateBean.DirectiveBean.PayloadBean payloadBean = renderObj.getDirective().getPayload();
         WeatherTemplateBean.DirectiveBean.PayloadBean.TitleBean titleBean = payloadBean.getTitle();
@@ -45,6 +49,27 @@ public class WeatherTemplateFragment extends Fragment {
         String currentWeatherIconUrl = currentWeatherSources.get(currentWeatherSources.size() - 1).getUrl();
         Glide.with(getActivity()).load(currentWeatherIconUrl).into(currentWeatherImgView);
         currentWeatherTv.setText(payloadBean.getCurrentWeather());
+        currentHighTempTv.setText(payloadBean.getHighTemperature().getValue());
+        currentLowTempTv.setText(payloadBean.getLowTemperature().getValue());
+
+
+        List<WeatherTemplateBean.DirectiveBean.PayloadBean.WeatherForecastBean> weatherForecast = payloadBean.getWeatherForecast();
+
+        for (int i = 0; i < 3; i++) {
+            View oneDayTempView = View.inflate(getActivity(), R.layout.one_day_weather_template, null);
+            WeatherTemplateBean.DirectiveBean.PayloadBean.WeatherForecastBean weatherForecastBean = weatherForecast.get(i);
+            String url = weatherForecastBean.getImage().getSources().get(2).getUrl();
+            ImageView weatherIcon = (ImageView) oneDayTempView.findViewById(R.id.weather_icon);
+            Glide.with(getActivity()).load(url).into(weatherIcon);
+            TextView weekDayView = (TextView) oneDayTempView.findViewById(R.id.week_day);
+            weekDayView.setText(weatherForecastBean.getDay());
+            TextView hTempTv = (TextView) oneDayTempView.findViewById(R.id.high_temp);
+            hTempTv.setText(weatherForecastBean.getHighTemperature());
+            TextView lTempTv = (TextView) oneDayTempView.findViewById(R.id.low_temp);
+            lTempTv.setText(weatherForecastBean.getLowTemperature());
+            weatherContainer.addView(oneDayTempView);
+        }
+
 
         return view;
     }

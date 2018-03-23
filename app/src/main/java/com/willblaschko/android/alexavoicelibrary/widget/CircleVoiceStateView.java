@@ -97,6 +97,10 @@ public class CircleVoiceStateView extends View {
         }
     }
 
+    public State getCurrentState() {
+        return mCurrentState;
+    }
+
     private void setupAnimation() {
         switch (mCurrentState) {
             case LISTENING:

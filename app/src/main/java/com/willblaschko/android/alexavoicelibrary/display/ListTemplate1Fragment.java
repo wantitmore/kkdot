@@ -1,6 +1,7 @@
 package com.willblaschko.android.alexavoicelibrary.display;
 
 import android.app.Fragment;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.Gravity;
@@ -49,9 +50,12 @@ public class ListTemplate1Fragment extends Fragment {
             TextView leftTv = new TextView(getActivity());
             TextView rightTv = new TextView(getActivity());
             leftTv.setText(leftTextField);
+            leftTv.setTextSize(20);
+            leftTv.setTextColor(Color.parseColor("#7B7D7B"));
             rightTv.setText(rightTextField);
             ll.addView(leftTv);
-            rightTv.setPadding(20, 0, 0, 0);
+            rightTv.setPadding(25, 0, 0, 16);
+            rightTv.setTextSize(24);
             ll.addView(rightTv);
             listItemsView.addView(ll);
         }

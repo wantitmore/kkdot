@@ -7,7 +7,6 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
@@ -70,6 +69,7 @@ import static okhttp3.internal.Util.UTF_8;
 public class ResponseParser {
 
     public static final String TAG = "ResponseParser";
+    public static boolean RECOGNIZE_STATE = false;
 
     private static final Pattern PATTERN = Pattern.compile("<(.*?)>");
     public static String kkDirective;
@@ -157,20 +157,27 @@ public class ResponseParser {
                     String directive = data.toString(Charset.defaultCharset().displayName());
                     boolean isCardData = isCard(directive);
                     Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
-                    if (isCardData) {
-                        Class targetClazz = Template1Bean.class;
-                        try {
-                            JSONObject jsonObject = new JSONObject(directive);
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(directive);
+                        String nameSpace = jsonObject.getJSONObject("directive").getJSONObject("header").getString("namespace");
+                        if ("SpeechRecognizer".equals(nameSpace)) {
+                            RECOGNIZE_STATE = true;
+                        } else {
+                            RECOGNIZE_STATE = false;
+                        }
+                        if (isCardData) {
+                            Class targetClazz = Template1Bean.class;
                             String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
                             targetClazz = mRenderTypeMap.get(renderType);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        Gson gson = new Gson();
-                        Object renderObj = gson.fromJson(directive, targetClazz);
-                        EventBus.getDefault().post(renderObj);
+                            Gson gson = new Gson();
+                            Object renderObj = gson.fromJson(directive, targetClazz);
+                            EventBus.getDefault().post(renderObj);
                     } else {
                         EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
+                    }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                     /*try {
                         Gson gson = new Gson();

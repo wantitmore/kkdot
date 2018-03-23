@@ -1,6 +1,7 @@
 package com.willblaschko.android.alexavoicelibrary;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,8 +12,12 @@ import com.willblaschko.android.alexa.AuthorizationManager;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.callbacks.AuthorizationCallback;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
+import com.willblaschko.android.alexavoicelibrary.display.DisplayCardActivity;
 import com.willblaschko.android.alexavoicelibrary.global.Constants;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.Nullable;
 
 import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUCT_ID;
@@ -35,7 +40,14 @@ public class LoginActivity extends Activity implements View.OnClickListener{
         initListener();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
     private void initListener() {
+        EventBus.getDefault().register(this);
         mLogin.setOnClickListener(this);
         mCancel.setOnClickListener(this);
         mDone.setOnClickListener(this);
@@ -56,15 +68,11 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 Log.d(TAG, "onClick: ");
                 mAlexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
                 logIn(new AlexaManager.ImplAuthorizationCallback<AvsResponse>(null) {
-
                     @Override
                     public void onSuccess() {
                         //call our function again
                         Log.d(TAG, "onSuccess: ");
                         //show things to try
-                        mThinsTryLayout.setVisibility(View.VISIBLE);
-                        mloginLayout.setVisibility(View.GONE);
-                        getSharedPreferences(Constants.ALEXA, MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
                     }
 
                 });
@@ -73,10 +81,21 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 finish();
                 break;
             case R.id.btn_done:
+                startActivity(new Intent(this, DisplayCardActivity.class));
                 finish();
                 break;
         }
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handleEvent(String auth) {
+        if ("success".equals(auth)) {
+            mThinsTryLayout.setVisibility(View.VISIBLE);
+            mloginLayout.setVisibility(View.GONE);
+            getSharedPreferences(Constants.ALEXA, MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
+        }
+    }
+
     public void logIn(@Nullable final AuthorizationCallback callback){
         //check if we're already logged in
         final AuthorizationManager authorizationManager = mAlexaManager.getAuthorizationManager();

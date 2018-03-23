@@ -122,12 +122,14 @@ public class AndroidSystemHandler {
     }
 
     private void setTimer(final AvsSetAlertItem item){
-        Intent i = new Intent(AlarmClock.ACTION_SET_TIMER);
         try {
             int time = (int) ((item.getScheduledTimeMillis() - System.currentTimeMillis()) / 1000);
-            i.putExtra(AlarmClock.EXTRA_LENGTH, time);
-            i.putExtra(AlarmClock.EXTRA_SKIP_UI, true);
-            context.startActivity(i);
+            Log.d(TAG, "setTimer: time is " + time);
+            Intent alarmas = new Intent(AlarmClock.ACTION_SET_TIMER);
+            alarmas.putExtra(AlarmClock.EXTRA_LENGTH, time);
+            alarmas.putExtra(AlarmClock.EXTRA_SKIP_UI, true);
+            alarmas.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(alarmas);
             AlexaManager.getInstance(context)
                     .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
 
@@ -160,7 +162,6 @@ public class AndroidSystemHandler {
             context.startActivity(i);
             AlexaManager.getInstance(context)
                     .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
-
         } catch (ParseException e) {
             e.printStackTrace();
         }

@@ -15,6 +15,7 @@ import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.callbacks.AuthorizationCallback;
 import com.willblaschko.android.alexa.utility.Util;
 
+import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.MessageDigest;
@@ -131,6 +132,8 @@ public class AuthorizationManager {
 
             Log.i(TAG, "Authorization successful");
             Util.showAuthToast(mContext, "Authorization successful.");
+            EventBus.getDefault().post("success");
+
             if(BuildConfig.DEBUG) {
             }
 
