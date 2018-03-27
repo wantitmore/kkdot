@@ -19,7 +19,7 @@ public class GenericSendEvent extends SendEvent{
 
     String event;
 
-    public GenericSendEvent(String url, String accessToken, String event,
+    public GenericSendEvent(AvsItem item, String url, String accessToken, String event,
                             final AsyncCallback<Call, Exception> callback){
         this.event = event;
 
@@ -27,7 +27,7 @@ public class GenericSendEvent extends SendEvent{
             callback.start();
         }
         try {
-            prepareConnection(url, accessToken);
+            prepareConnection(item, url, accessToken);
             if (callback != null) {
                 callback.success(completePost());
                 callback.complete();
@@ -43,7 +43,7 @@ public class GenericSendEvent extends SendEvent{
 
     @NotNull
     @Override
-    public String getEvent() {
+    public String getEvent(AvsItem item) {
         return event;
     }
 

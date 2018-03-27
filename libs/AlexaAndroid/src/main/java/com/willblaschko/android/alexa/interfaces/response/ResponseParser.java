@@ -260,6 +260,7 @@ public class ResponseParser {
             case Directive.TYPE_STOP_CAPTURE:
                 return new AvsStopCaptureItem(directive.getPayload().getToken());
             case Directive.TYPE_STOP:
+                //stop play
                 return new AvsStopItem(directive.getPayload().getToken());
             case Directive.TYPE_SET_ALERT:
                 return new AvsSetAlertItem(directive.getPayload().getToken(), directive.getPayload().getType(), directive.getPayload().getScheduledTime());

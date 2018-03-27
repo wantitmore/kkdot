@@ -1,6 +1,7 @@
 package com.willblaschko.android.alexa.interfaces.speechrecognizer;
 
 import com.willblaschko.android.alexa.data.Event;
+import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.SendEvent;
 
 import org.jetbrains.annotations.NotNull;
@@ -18,8 +19,8 @@ public abstract class SpeechSendEvent extends SendEvent {
 
     @NotNull
     @Override
-    protected String getEvent() {
-        return Event.getSpeechRecognizerEvent();
+    protected String getEvent(AvsItem item) {
+        return Event.getSpeechRecognizerEvent(item);
     }
 
     @Override

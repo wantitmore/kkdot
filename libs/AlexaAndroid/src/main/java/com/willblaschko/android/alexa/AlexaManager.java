@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.callbacks.AuthorizationCallback;
 import com.willblaschko.android.alexa.data.Event;
@@ -266,7 +267,8 @@ public class AlexaManager {
                                 public void onSuccess(String token) {
 
                                     try {
-                                        getSpeechSendText().sendText(mContext, url, token, text, new AsyncEventHandler(AlexaManager.this, callback));
+                                        AlexaAudioPlayer player = AlexaAudioPlayer.getInstance(mContext);
+                                        getSpeechSendText().sendText(player.getCurrentItem(), mContext, url, token, text, new AsyncEventHandler(AlexaManager.this, callback));
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                         //bubble up the error
@@ -349,7 +351,9 @@ public class AlexaManager {
                                 @Override
                                 protected AvsResponse doInBackground(Void... params) {
                                     try {
-                                        getSpeechSendAudio().sendAudio(url, token, requestBody, new AsyncEventHandler(AlexaManager.this, callback));
+                                        AlexaAudioPlayer player = AlexaAudioPlayer.getInstance(mContext);
+                                        AvsItem currentItem = player.getCurrentItem();
+                                        getSpeechSendAudio().sendAudio(currentItem,url, token, requestBody, new AsyncEventHandler(AlexaManager.this, callback));
                                         Log.d(TAG, "doInBackground: ----authorth success");
                                     } catch (IOException e) {
                                         e.printStackTrace();
@@ -517,8 +521,9 @@ public class AlexaManager {
                             new AsyncTask<Void, Void, AvsResponse>() {
                                 @Override
                                 protected AvsResponse doInBackground(Void... params) {
-                                    Log.i(TAG, event);
-                                    new GenericSendEvent(url, token, event, new AsyncEventHandler(AlexaManager.this, callback));
+                                    Log.i(TAG,  " event is " + event);
+                                    AlexaAudioPlayer player = AlexaAudioPlayer.getInstance(mContext);
+                                    new GenericSendEvent(player.getCurrentItem(), url, token, event, new AsyncEventHandler(AlexaManager.this, callback));
                                     return null;
                                 }
                                 @Override
@@ -606,6 +611,7 @@ public class AlexaManager {
         @Override
         public void success(Call currentCall) {
             try {
+                Log.d(TAG, "success: ---------------------222");
                 Response response = currentCall.execute();
 
                 if(response.code() == HttpURLConnection.HTTP_NO_CONTENT){

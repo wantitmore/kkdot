@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.interfaces.AvsException;
+import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 
 import org.jetbrains.annotations.NotNull;
@@ -35,18 +36,18 @@ public class SpeechSendAudio extends SpeechSendEvent {
      * @param callback our event callbacks
      * @throws IOException
      */
-    public void sendAudio(final String url, final String accessToken, @NotNull DataRequestBody requestBody,
+    public void sendAudio(AvsItem item, final String url, final String accessToken, @NotNull DataRequestBody requestBody,
                           final AsyncCallback<Call, Exception> callback) throws IOException {
         this.requestBody = requestBody;
         if(callback != null){
             callback.start();
         }
-        Log.i(TAG, "Starting SpeechSendAudio procedure");
+        Log.i(TAG, "Starting SpeechSendAudio procedure " + item);
         start = System.currentTimeMillis();
 
         //call the parent class's prepareConnection() in order to prepare our URL POST
         try {
-            prepareConnection(url, accessToken);
+            prepareConnection(item, url, accessToken);
             final Call response = completePost();
 
             if (callback != null) {

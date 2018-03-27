@@ -1,6 +1,10 @@
 package com.willblaschko.android.alexa.data;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
+import com.willblaschko.android.alexa.interfaces.AvsItem;
+import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +28,7 @@ public class Event {
 
     Header header;
     Payload payload;
-    List<Event> context;
+    static List<Event> context;
 
     public Header getHeader() {
         return header;
@@ -83,6 +87,7 @@ public class Event {
     public static class Payload{
         String token;
         String profile;
+        String playerActivity;
         String format;
         Boolean muted;
         Long volume;
@@ -130,7 +135,6 @@ public class Event {
         public EventWrapper build(){
             EventWrapper wrapper = new EventWrapper();
             wrapper.event = event;
-
             if (context != null && !context.isEmpty() && !(context.size() == 1 && context.get(0) == null)) {
                 wrapper.context = context;
             }
@@ -139,6 +143,7 @@ public class Event {
         }
 
         public String toJson(){
+            Log.d("event", "toJson: " + build().toJson());
             return build().toJson();
         }
 
@@ -146,6 +151,7 @@ public class Event {
             if (context == null) {
                 return this;
             }
+
             this.context = context;
             return this;
         }
@@ -198,15 +204,37 @@ public class Event {
         }
     }
 
-    public static String getSpeechRecognizerEvent(){
+    public static String getSpeechRecognizerEvent(AvsItem item){
         Builder builder = new Builder();
+        Log.d("Event", "getSpeechRecognizerEvent: " + item);
+        context = new ArrayList<>();
+        if (item instanceof AvsPlayRemoteItem) {
+            addRemoteContext(item);
+        }
+
         builder.setHeaderNamespace("SpeechRecognizer")
+                .setContext(context)
                 .setHeaderName("Recognize")
                 .setHeaderMessageId(getUuid())
                 .setHeaderDialogRequestId("dialogRequest-321")
                 .setPayloadFormat("AUDIO_L16_RATE_16000_CHANNELS_1")
                 .setPayloadProfile("NEAR_FIELD");
         return builder.toJson();
+    }
+
+    private static void addRemoteContext(AvsItem item) {
+        Event event = new Event();
+        Header header = new Header();
+        header.setNamespace("AudioPlayer");
+        header.setName("PlaybackState");
+        Payload payload = new Payload();
+        payload.token = item.getToken();
+        payload.offsetInMilliseconds = 0L;
+        payload.playerActivity = "PLAYING";
+        event.setHeader(header);
+        event.setPayload(payload);
+        context.add(event);
+        Log.d("Event", "getSpeechRecognizerEvent: " + context.size());
     }
 
     public static String getVolumeChangedEvent(long volume, boolean isMute){
@@ -348,6 +376,7 @@ public class Event {
 
     public static String getPlaybackStartedEvent(String token, long offset){
         Builder builder = new Builder();
+
         builder.setHeaderNamespace("AudioPlayer")
                 .setHeaderName("PlaybackStarted")
                 .setPlayloadOffsetInMilliseconds(offset)

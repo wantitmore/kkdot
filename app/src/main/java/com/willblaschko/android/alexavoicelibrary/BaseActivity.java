@@ -328,7 +328,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             //pause this and play other
 
         }
-        if (current instanceof AvsSpeakItem && audioPlayer.isPlaying()) {
+        if (current instanceof AvsSpeakItem && audioPlayer.isPlaying() && avsQueue.size() > 1) {
             Log.d(TAG, "checkQueue: speak item stop");
             audioPlayer.stop();
 //            audioPlayer.removeCallback(alexaAudioPlayerCallback);
@@ -359,11 +359,15 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             Log.d(TAG, "checkQueue:  and directive is " + ResponseParser.kkDirective);
         } else if (current instanceof AvsStopItem) {
             //stop our play
+            Log.d(TAG, "checkQueue: --stop our play");
             audioPlayer.stop();
-            avsQueue.remove(current);
+            avsQueue.clear();
+            audioPlayer.release();
         } else if (current instanceof AvsReplaceAllItem) {
             //clear all items
             //mAvsItemQueue.clear();
+            currentPosition = 0;
+            avsQueue.clear();
             audioPlayer.stop();
             avsQueue.remove(current);
         } else if (current instanceof AvsReplaceEnqueuedItem) {

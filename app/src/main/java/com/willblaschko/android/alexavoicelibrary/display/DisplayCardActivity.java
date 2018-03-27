@@ -177,13 +177,13 @@ public class DisplayCardActivity extends BaseActivity {
     private DataRequestBody requestBody = new DataRequestBody() {
         @Override
         public void writeTo(BufferedSink sink) throws IOException {
-            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa");
+//            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa");
             while (recorder != null && !recorder.isPausing()) {
                 try {
-                    Log.d(TAG, "writeTo: record is null? " + recorder);
+//                    Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-                        Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+//                        Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                         mVoiceStateView.post(new Runnable() {
                             @Override
                             public void run() {
