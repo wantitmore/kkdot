@@ -202,18 +202,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
     }
 
-    public void sendPlaybackControllerPauseCommandIssued() {
-        alexaManager.sendPlaybackControllerPauseCommandIssued(requestCallback);
-    }
-
-    public void sendPlaybackControllerPreviousCommandIssued() {
-        alexaManager.sendPlaybackControllerPreviousCommandIssued(requestCallback);
-    }
-
-    public void sendPlaybackControllerNextCommandIssued() {
-        alexaManager.sendPlaybackControllerNextCommandIssued(requestCallback);
-    }
-
     /**
      * Send an event back to Alexa that we're starting a speech event
      * https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/audioplayer#PlaybackNearlyFinished Event

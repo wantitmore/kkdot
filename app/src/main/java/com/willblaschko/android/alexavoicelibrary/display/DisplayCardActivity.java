@@ -16,16 +16,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
-import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
 import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
@@ -63,8 +60,6 @@ public class DisplayCardActivity extends BaseActivity {
     private FragmentManager mFragmentManager;
     private RawAudioRecorder recorder;
     private AlexaReceiver alexaReceiver;
-    private int mScreenWidth;
-    private int mScreenHeight;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,12 +73,6 @@ public class DisplayCardActivity extends BaseActivity {
             finish();
         }
         overridePendingTransition(0,R.animator.out_activity);
-        WindowManager windowManager = getWindowManager();
-        DisplayMetrics dm = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getMetrics(dm);
-        mScreenWidth = dm.widthPixels;
-        mScreenHeight = dm.heightPixels;
-
         alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
 
         setContentView(R.layout.activity_display_card);
@@ -112,15 +101,6 @@ public class DisplayCardActivity extends BaseActivity {
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
         startListening();
-    }
-
-    public void moveVoiceViewToCenter() {
-        mVoiceStateView.setX((mScreenWidth - mVoiceStateView.getWidth()) / 2);
-    }
-
-    public void resetVoiceViewPosition() {
-        Log.d(TAG, "reset position");
-        mVoiceStateView.setX(mVoiceStateView.getLeft());
     }
 
     @Override
@@ -173,8 +153,6 @@ public class DisplayCardActivity extends BaseActivity {
             mShowingFragment = WeatherTemplateFragment.newInstance();
         } else if (renderObj instanceof ListTemplate1Bean) {
             mShowingFragment = ListTemplate1Fragment.newInstance();
-        } else if (renderObj instanceof PlayerInfoBean) {
-            mShowingFragment = PlayerInfoFragment.newInstance();
         } else {
             mShowingFragment = EmptyFragment.newInstance();
         }

@@ -57,6 +57,18 @@ public class CircleVoiceStateView extends View {
         super(context, attrs, defStyleAttr);
         init();
         setupAnimation();
+
+        /*setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = mCurrentState.ordinal();
+                index++;
+                if (index >= State.values().length) {
+                    index = 0;
+                }
+                setCurrentState(State.values()[index]);
+            }
+        });*/
     }
 
 

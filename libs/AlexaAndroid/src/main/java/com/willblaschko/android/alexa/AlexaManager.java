@@ -562,19 +562,6 @@ public class AlexaManager {
         });
     }
 
-
-    public void sendPlaybackControllerPauseCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
-        sendEvent(Event.getPlaybackControllerPauseCommandIssued(), callback);
-    }
-
-    public void sendPlaybackControllerPreviousCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
-        sendEvent(Event.getPlaybackControllerPreviousCommandIssued(), callback);
-    }
-
-    public void sendPlaybackControllerNextCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
-        sendEvent(Event.getPlaybackControllerNextCommandIssued(), callback);
-    }
-
     private boolean isAudioPlayItem (AvsItem item) {
         return item != null && (item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem));
     }
