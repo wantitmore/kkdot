@@ -29,6 +29,9 @@ public class Event {
     Header header;
     Payload payload;
     static List<Event> context;
+    public static final String STATE_PLAYING = "PLAYING";
+    public static final String STATE_IDLE = "IDLE";
+    public static String playState;
 
     public Header getHeader() {
         return header;
@@ -206,9 +209,9 @@ public class Event {
 
     public static String getSpeechRecognizerEvent(AvsItem item){
         Builder builder = new Builder();
-        Log.d("Event", "getSpeechRecognizerEvent: " + item);
+        Log.d("Event", "getSpeechRecognizerEvent: " + item + "---" + playState);
         context = new ArrayList<>();
-        if (item instanceof AvsPlayRemoteItem) {
+        if (item instanceof AvsPlayRemoteItem && !playState.equals(STATE_IDLE)) {
             addRemoteContext(item);
         }
 
@@ -229,8 +232,8 @@ public class Event {
         header.setName("PlaybackState");
         Payload payload = new Payload();
         payload.token = item.getToken();
-        payload.offsetInMilliseconds = 0L;
-        payload.playerActivity = "PLAYING";
+//        payload.offsetInMilliseconds = 0L;
+        payload.playerActivity = playState;
         event.setHeader(header);
         event.setPayload(payload);
         context.add(event);

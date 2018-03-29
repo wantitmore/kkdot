@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
+import com.willblaschko.android.alexa.data.Event;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayAudioItem;
@@ -95,6 +96,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     }
 
 
+
+
+
     private void initAlexaAndroid() {
         //get our AlexaManager instance for convenience
         alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
@@ -121,6 +125,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
         @Override
         public void playerPrepared(AvsItem pendingItem) {
+
         }
 
         @Override
@@ -143,8 +148,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     Log.i(TAG, "AlmostDone " + item.getToken() + " fired: " + percent);
                 }
                 almostDoneFired = true;
-                if (item instanceof AvsPlayAudioItem) {
-                    sendPlaybackNearlyFinishedEvent((AvsPlayAudioItem) item, offsetInMilliseconds);
+                if(item instanceof AvsPlayAudioItem||item instanceof AvsPlayRemoteItem) {
+                    Log.i(TAG, "AlmostDone " + item.getToken() + " fired: " + percent);
+                    sendPlaybackNearlyFinishedEvent( item, offsetInMilliseconds);
                 }
             }
         }
@@ -158,14 +164,20 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             if (completedItem instanceof AvsPlayContentItem || completedItem == null) {
                 return;
             }
-            if (BuildConfig.DEBUG) {
-                Log.i(TAG, "Complete " + completedItem.getToken() + " fired");
+            if (avsQueue.size() <= 0) {
+                Log.d(TAG, "itemComplete: ----------");
+                fadeOutView();
+            }
+            //if(BuildConfig.DEBUG)
+            {
+                Log.i(TAG, "Complete " + completedItem.getToken() + " fired--" + avsQueue.size());
             }
             sendPlaybackFinishedEvent(completedItem);
         }
 
         @Override
         public boolean playerError(AvsItem item, int what, int extra) {
+            Log.i(TAG,item==null?"no item":item.getToken()+" what:"+ what+",extra:"+extra);
             return false;
         }
 
@@ -177,15 +189,29 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
     };
 
+    public abstract void fadeOutView();
+
     /**
      * Send an event back to Alexa that we're nearly done with our current playback event, this should supply us with the next item
      * https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/audioplayer#PlaybackNearlyFinished Event
      */
-    private void sendPlaybackNearlyFinishedEvent(AvsPlayAudioItem item, long offsetInMilliseconds) {
+    private void sendPlaybackNearlyFinishedEvent(AvsItem item, long offsetInMilliseconds){
         if (item != null) {
             alexaManager.sendPlaybackNearlyFinishedEvent(item, offsetInMilliseconds, requestCallback);
             Log.i(TAG, "Sending PlaybackNearlyFinishedEvent");
         }
+    }
+
+    public void sendPlaybackControllerPauseCommandIssued() {
+        alexaManager.sendPlaybackControllerPauseCommandIssued(requestCallback);
+    }
+
+    public void sendPlaybackControllerPreviousCommandIssued() {
+        alexaManager.sendPlaybackControllerPreviousCommandIssued(requestCallback);
+    }
+
+    public void sendPlaybackControllerNextCommandIssued() {
+        alexaManager.sendPlaybackControllerNextCommandIssued(requestCallback);
     }
 
     /**
@@ -194,7 +220,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
      */
     private void sendPlaybackStartedEvent(AvsItem item) {
         alexaManager.sendPlaybackStartedEvent(item, 0, null);
-        Log.i(TAG, "Sending SpeechStartedEvent");
+        Log.i(TAG, "Sending sendPlaybackStartedEvent");
     }
 
     /**
@@ -204,6 +230,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private void sendPlaybackFinishedEvent(AvsItem item) {
         if (item != null) {
             alexaManager.sendPlaybackFinishedEvent(item, null);
+//            fadeOutView();
             Log.i(TAG, "Sending PlaybackFinishedEvent");
         }
     }
@@ -246,7 +273,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
     /**
      * Handle the response sent back from Alexa's parsing of the Intent, these can be any of the AvsItem types (play, speak, stop, clear, listen)
-     *
      * @param response a List<AvsItem> returned from the mAlexaManager.sendTextRequest() call in sendVoiceToAlexa()
      */
     private void handleResponse(AvsResponse response) {
@@ -283,7 +309,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     /**
      * Check our current queue of items, and if we have more to parse (once we've reached a play or listen callback) then proceed to the
      * next item in our list.
-     * <p>
+     *
      * We're handling the AvsReplaceAllItem in handleResponse() because it needs to clear everything currently in the queue, before
      * the new items are added to the list, it should have no function here.
      */
@@ -343,6 +369,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             //play a URL
             if (!audioPlayer.isPlaying()) {
                 audioPlayer.playItem((AvsPlayRemoteItem) current);
+                Event.playState = Event.STATE_PLAYING;
             }
         } else if (current instanceof AvsPlayContentItem) {
             //play a URL
@@ -363,11 +390,11 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             audioPlayer.stop();
             avsQueue.clear();
             audioPlayer.release();
+            setState(STATE_FINISHED);
+            Event.playState = Event.STATE_IDLE;
         } else if (current instanceof AvsReplaceAllItem) {
             //clear all items
             //mAvsItemQueue.clear();
-            currentPosition = 0;
-            avsQueue.clear();
             audioPlayer.stop();
             avsQueue.remove(current);
         } else if (current instanceof AvsReplaceEnqueuedItem) {
@@ -434,11 +461,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private void adjustVolume(long adjust) {
         setVolume(adjust, true);
     }
-
     private void setVolume(long volume) {
         setVolume(volume, false);
     }
-
     private void setVolume(final long volume, final boolean adjust) {
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         final int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -466,7 +491,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         });
 
     }
-
     private void setMute(final boolean isMute) {
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         am.setStreamMute(AudioManager.STREAM_MUSIC, isMute);
@@ -485,7 +509,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
     /**
      * Force the device to think that a hardware button has been pressed, this is used for Play/Pause/Previous/Next Media commands
-     *
      * @param context
      * @param keyCode keycode for the hardware button we're emulating
      */

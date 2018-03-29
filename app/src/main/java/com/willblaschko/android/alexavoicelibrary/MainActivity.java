@@ -57,6 +57,11 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
     }
 
     @Override
+    public void fadeOutView() {
+
+    }
+
+    @Override
     protected void startListening() {
         Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_FRAGMENT);
         if (fragment != null && fragment.isVisible()) {

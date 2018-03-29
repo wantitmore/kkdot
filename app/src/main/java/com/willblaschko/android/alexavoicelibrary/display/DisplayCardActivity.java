@@ -3,6 +3,7 @@ package com.willblaschko.android.alexavoicelibrary.display;
 import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -15,20 +16,22 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
+import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
 import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.interfaces.response.ResponseParser;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BaseActivity;
-import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.LoginActivity;
 import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.alexavoicelibrary.global.Constants;
@@ -60,6 +63,8 @@ public class DisplayCardActivity extends BaseActivity {
     private FragmentManager mFragmentManager;
     private RawAudioRecorder recorder;
     private AlexaReceiver alexaReceiver;
+    private int mScreenWidth;
+    private int mScreenHeight;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,6 +77,12 @@ public class DisplayCardActivity extends BaseActivity {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
+        overridePendingTransition(0,R.animator.out_activity);
+        WindowManager windowManager = getWindowManager();
+        DisplayMetrics dm = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(dm);
+        mScreenWidth = dm.widthPixels;
+        mScreenHeight = dm.heightPixels;
 
         alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
 
@@ -83,7 +94,7 @@ public class DisplayCardActivity extends BaseActivity {
         mFragmentManager = getFragmentManager();
 
 
-        search = (EditText) findViewById(R.id.search);
+/*        search = (EditText) findViewById(R.id.search);
         button = findViewById(R.id.button);
 
 
@@ -92,25 +103,24 @@ public class DisplayCardActivity extends BaseActivity {
             public void onClick(View v) {
                 search();
             }
-        });
+        });*/
 
-        mVoiceStateView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (recorder == null) {
-                    startListening();
-                } else {
-                    stopListening();
-                }
-            }
-        });
 
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.konka.android.intent.action.START_VOICE");
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
-//        startListening();
+        startListening();
+    }
+
+    public void moveVoiceViewToCenter() {
+        mVoiceStateView.setX((mScreenWidth - mVoiceStateView.getWidth()) / 2);
+    }
+
+    public void resetVoiceViewPosition() {
+        Log.d(TAG, "reset position");
+        mVoiceStateView.setX(mVoiceStateView.getLeft());
     }
 
     @Override
@@ -145,10 +155,10 @@ public class DisplayCardActivity extends BaseActivity {
         }
     }
 
-    private void search(){
+ /*   private void search(){
         String text = search.getText().toString();
         alexaManager.sendTextRequest(text, getRequestCallback());
-    }
+    }*/
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -163,6 +173,8 @@ public class DisplayCardActivity extends BaseActivity {
             mShowingFragment = WeatherTemplateFragment.newInstance();
         } else if (renderObj instanceof ListTemplate1Bean) {
             mShowingFragment = ListTemplate1Fragment.newInstance();
+        } else if (renderObj instanceof PlayerInfoBean) {
+            mShowingFragment = PlayerInfoFragment.newInstance();
         } else {
             mShowingFragment = EmptyFragment.newInstance();
         }
@@ -170,7 +182,12 @@ public class DisplayCardActivity extends BaseActivity {
             args.putParcelable("args", (Parcelable) renderObj);
             mShowingFragment.setArguments(args);
         }
-        mFragmentManager.beginTransaction().replace(R.id.main_display_content, mShowingFragment).commit();
+        FragmentTransaction transaction = mFragmentManager.beginTransaction();
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+//        transaction.setCustomAnimations()
+        transaction.setCustomAnimations(R.animator.enter, R.animator.out).addToBackStack(null);
+
+        transaction.replace(R.id.main_display_content, mShowingFragment).commit();
     }
 
 
@@ -183,7 +200,7 @@ public class DisplayCardActivity extends BaseActivity {
 //                    Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-//                        Log.d(TAG, "run: ----rmsdb is " + rmsdb);
+                        Log.d(TAG, "run: ----rmsdb is " + rmsdb);
                         mVoiceStateView.post(new Runnable() {
                             @Override
                             public void run() {
@@ -196,10 +213,6 @@ public class DisplayCardActivity extends BaseActivity {
                     }
                     if (sink != null && recorder != null) {
                         sink.write(recorder.consumeRecording());
-                    }
-                    if (BuildConfig.DEBUG) {
-//                        Log.i(TAG, "Received audio");
-//                        Log.i(TAG, "RMSDB: " + rmsdb);
                     }
                 } catch (Exception e) {
                     Log.d(TAG, "writeTo: error is " + e.getMessage());
@@ -230,6 +243,43 @@ public class DisplayCardActivity extends BaseActivity {
         }
         EventBus.getDefault().unregister(this);
         super.onDestroy();
+    }
+
+    @Override
+    public void fadeOutView() {
+        EventBus.getDefault().post("");
+        Log.d(TAG, "fadeOutView: --");
+        finish();
+        overridePendingTransition(0,R.animator.out_activity);
+        /*AlphaAnimation animation = new AlphaAnimation(1, 0);
+        animation.setDuration(400);
+        animation.setFillAfter(true);
+        mVoiceStateView.setAnimation(animation);
+        animation.start();
+        animation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                Log.d(TAG, "onAnimationEnd: Sending PlaybackFinishedEvent");
+//                finish();
+                new Handler().postDelayed(new Runnable(){
+                    public void run() {
+                        //execute the task
+                        Log.d(TAG, "run: Sending PlaybackFinishedEvent finish");
+                        finish();
+                    }
+                }, 300);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });*/
     }
 
     @Override

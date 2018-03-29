@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
+import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
 import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
@@ -57,6 +58,8 @@ import java.util.regex.Pattern;
 
 import okhttp3.Headers;
 import okhttp3.Response;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 import static okhttp3.internal.Util.UTF_8;
 
@@ -79,6 +82,7 @@ public class ResponseParser {
         put("BodyTemplate2", Template2Bean.class);
         put("ListTemplate1", ListTemplate1Bean.class);
         put("WeatherTemplate", WeatherTemplateBean.class);
+        put("RenderPlayerInfo", PlayerInfoBean.class);
     }};
 
     /**
@@ -167,9 +171,13 @@ public class ResponseParser {
                             RECOGNIZE_STATE = false;
                         }
                         if (isCardData) {
-                            Class targetClazz = Template1Bean.class;
-                            String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
-                            targetClazz = mRenderTypeMap.get(renderType);
+                            Class targetClazz;
+                            String headName = jsonObject.getJSONObject("directive").getJSONObject("header").getString("name");
+                            targetClazz = mRenderTypeMap.get(headName);
+                            if (targetClazz == null) {
+                                String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
+                                targetClazz = mRenderTypeMap.get(renderType);
+                            }
                             Gson gson = new Gson();
                             Object renderObj = gson.fromJson(directive, targetClazz);
                             EventBus.getDefault().post(renderObj);
@@ -255,6 +263,20 @@ public class ResponseParser {
                 if(url.contains("cid:")){
                     return new AvsPlayAudioItem(directive.getPayload().getToken(), url, audio.get(url));
                 }else{
+                   if(url.contains("opml.radiotime.com")) {
+                        try {
+                            //opml.radiotime.com provides M3U file for audio play
+                            OkHttpClient client = new OkHttpClient();
+                            Request request = new Request.Builder()
+                                    .url(url)
+                                    .build();
+                            Response response = client.newCall(request).execute();
+                            url = response.body().string().trim();
+                            Log.d(TAG, "real url:" + url);
+                        } catch (Exception e) {
+                            Log.d(TAG, e.toString());
+                        }
+                    }
                     return new AvsPlayRemoteItem(directive.getPayload().getToken(), url, directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds());
                 }
             case Directive.TYPE_STOP_CAPTURE:
@@ -374,6 +396,6 @@ public class ResponseParser {
      * Check if the directive controls KK
      */
     private static boolean isCard(String response) {
-        return response.contains("RenderTemplate");
+        return response.contains("RenderTemplate") || response.contains("RenderPlayerInfo");
     }
 }

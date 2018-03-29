@@ -6,6 +6,10 @@ import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.orhanobut.logger.AndroidLogAdapter;
+import com.orhanobut.logger.FormatStrategy;
+import com.orhanobut.logger.Logger;
+import com.orhanobut.logger.PrettyFormatStrategy;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.callbacks.AuthorizationCallback;
@@ -64,6 +68,10 @@ public class AlexaManager {
     public static boolean getKKSkill = false;
 
     private AlexaManager(Context context, String productId){
+        FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
+                .methodCount(5)
+                .build();
+        Logger.addLogAdapter(new AndroidLogAdapter());
         mContext = context.getApplicationContext();
         if(productId == null){
             productId = context.getString(R.string.alexa_product_id);
@@ -488,7 +496,7 @@ public class AlexaManager {
      * @param item our speak/playback item
      * @param callback
      */
-    public void sendPlaybackNearlyFinishedEvent(AvsPlayAudioItem item, long milliseconds, final AsyncCallback<AvsResponse, Exception> callback){
+    public void sendPlaybackNearlyFinishedEvent(AvsItem item, long milliseconds, final AsyncCallback<AvsResponse, Exception> callback){
         if (item == null) {
             return;
         }
@@ -521,7 +529,8 @@ public class AlexaManager {
                             new AsyncTask<Void, Void, AvsResponse>() {
                                 @Override
                                 protected AvsResponse doInBackground(Void... params) {
-                                    Log.i(TAG,  " event is " + event);
+                                    Logger.i(TAG,  " event is " + event);
+
                                     AlexaAudioPlayer player = AlexaAudioPlayer.getInstance(mContext);
                                     new GenericSendEvent(player.getCurrentItem(), url, token, event, new AsyncEventHandler(AlexaManager.this, callback));
                                     return null;
@@ -551,6 +560,19 @@ public class AlexaManager {
             }
 
         });
+    }
+
+
+    public void sendPlaybackControllerPauseCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
+        sendEvent(Event.getPlaybackControllerPauseCommandIssued(), callback);
+    }
+
+    public void sendPlaybackControllerPreviousCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
+        sendEvent(Event.getPlaybackControllerPreviousCommandIssued(), callback);
+    }
+
+    public void sendPlaybackControllerNextCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
+        sendEvent(Event.getPlaybackControllerNextCommandIssued(), callback);
     }
 
     private boolean isAudioPlayItem (AvsItem item) {
