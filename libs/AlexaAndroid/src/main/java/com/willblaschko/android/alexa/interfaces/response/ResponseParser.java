@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
+import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.beans.Template1Bean;
 import com.willblaschko.android.alexa.beans.Template2Bean;
 import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
@@ -79,6 +80,7 @@ public class ResponseParser {
         put("BodyTemplate2", Template2Bean.class);
         put("ListTemplate1", ListTemplate1Bean.class);
         put("WeatherTemplate", WeatherTemplateBean.class);
+        put("RenderPlayerInfo", PlayerInfoBean.class);
     }};
 
     /**
@@ -167,9 +169,13 @@ public class ResponseParser {
                             RECOGNIZE_STATE = false;
                         }
                         if (isCardData) {
-                            Class targetClazz = Template1Bean.class;
-                            String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
-                            targetClazz = mRenderTypeMap.get(renderType);
+                            Class targetClazz;
+                            String headName = jsonObject.getJSONObject("directive").getJSONObject("header").getString("name");
+                            targetClazz = mRenderTypeMap.get(headName);
+                            if (targetClazz == null) {
+                                String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
+                                targetClazz = mRenderTypeMap.get(renderType);
+                            }
                             Gson gson = new Gson();
                             Object renderObj = gson.fromJson(directive, targetClazz);
                             EventBus.getDefault().post(renderObj);
@@ -374,6 +380,6 @@ public class ResponseParser {
      * Check if the directive controls KK
      */
     private static boolean isCard(String response) {
-        return response.contains("RenderTemplate");
+        return response.contains("RenderTemplate") || response.contains("RenderPlayerInfo");
     }
 }

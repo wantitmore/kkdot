@@ -20,7 +20,7 @@
         android:layout_width="350dp"
         android:layout_height="300dp"
         android:layout_gravity="center"
-        android:gravity="center"
+        android:gravity="center_horizontal|bottom"
         android:orientation="horizontal"
         android:padding="@dimen/activity_horizontal_margin"
         android:id="@+id/linearLayout">
