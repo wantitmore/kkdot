@@ -23,6 +23,7 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.orhanobut.logger.Logger;
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
@@ -104,6 +105,16 @@ public class DisplayCardActivity extends BaseActivity {
                 search();
             }
         });*/
+        mVoiceStateView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (recorder == null) {
+                    startListening();
+                } else {
+                    stopListening();
+                }
+            }
+        });
 
 
         IntentFilter filter = new IntentFilter();
@@ -185,7 +196,7 @@ public class DisplayCardActivity extends BaseActivity {
         FragmentTransaction transaction = mFragmentManager.beginTransaction();
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 //        transaction.setCustomAnimations()
-        transaction.setCustomAnimations(R.animator.enter, R.animator.out).addToBackStack(null);
+        transaction.setCustomAnimations(R.animator.enter, R.animator.out);
 
         transaction.replace(R.id.main_display_content, mShowingFragment).commit();
     }
@@ -248,8 +259,8 @@ public class DisplayCardActivity extends BaseActivity {
     @Override
     public void fadeOutView() {
         EventBus.getDefault().post("");
-        Log.d(TAG, "fadeOutView: --");
-        finish();
+        Logger.d("fadeOutView: --");
+//        finish();
         overridePendingTransition(0,R.animator.out_activity);
         /*AlphaAnimation animation = new AlphaAnimation(1, 0);
         animation.setDuration(400);
@@ -289,9 +300,9 @@ public class DisplayCardActivity extends BaseActivity {
         if (recorder == null) {
             Log.d(TAG, "startListening: recorder = null");
             recorder = new RawAudioRecorder(AUDIO_RATE);
+            recorder.start();
+            alexaManager.sendAudioRequest(requestBody, getRequestCallback());
         }
-        recorder.start();
-        alexaManager.sendAudioRequest(requestBody, getRequestCallback());
     }
 
     @Override
@@ -332,7 +343,7 @@ public class DisplayCardActivity extends BaseActivity {
     private void stopListening() {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
-            recorder.stop();
+//            recorder.stop();
             recorder.release();
             recorder = null;
         }
@@ -343,8 +354,8 @@ public class DisplayCardActivity extends BaseActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            Log.d(TAG, "onReceive: intent is " + intent.getAction());
-            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE") && !ResponseParser.RECOGNIZE_STATE) {
+            Log.d(TAG, "onReceive: intent is " + intent.getAction() + "==" + ResponseParser.RECOGNIZE_STATE);
+            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE") /*&& !ResponseParser.RECOGNIZE_STATE*/) {
                 startListening();
             }
             if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {

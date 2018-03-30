@@ -290,6 +290,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 }
             }
             Log.i(TAG, "Adding " + response.size() + " items to our queue");
+            if (response.size() == 0) {
+                fadeOutView();
+            }
             if (BuildConfig.DEBUG) {
                 for (int i = 0; i < response.size(); i++) {
                     Log.i(TAG, "\tAdding: " + response.get(i).getToken());
