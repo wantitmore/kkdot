@@ -567,6 +567,10 @@ public class AlexaManager {
         sendEvent(Event.getPlaybackControllerPauseCommandIssued(), callback);
     }
 
+    public void sendPlaybackControllerPlayCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
+        sendEvent(Event.getPlaybackControllerPlayCommandIssued(), callback);
+    }
+
     public void sendPlaybackControllerPreviousCommandIssued(final AsyncCallback<AvsResponse, Exception> callback) {
         sendEvent(Event.getPlaybackControllerPreviousCommandIssued(), callback);
     }
@@ -633,7 +637,6 @@ public class AlexaManager {
         @Override
         public void success(Call currentCall) {
             try {
-                Log.d(TAG, "success: ---------------------222");
                 Response response = currentCall.execute();
 
                 if(response.code() == HttpURLConnection.HTTP_NO_CONTENT){
@@ -643,11 +646,6 @@ public class AlexaManager {
                 final AvsResponse items = response.code() == HttpURLConnection.HTTP_NO_CONTENT ? new AvsResponse() :
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
                 response.body().close();
-                Log.d(TAG, "success: ---------------------");
-                //start to pause playing audio
-//                final AlexaAudioPlayer audioPlayer = AlexaAudioPlayer.getInstance(mContext);
-//                audioPlayer.release();
-//                audioPlayer.play();
                 if (!TextUtils.isEmpty(ResponseParser.kkDirective) && getKKSkill) {
                     Log.d(TAG, "success: kkDirective is " + ResponseParser.kkDirective);
                     getKKSkill = false;

@@ -3,8 +3,11 @@ package com.willblaschko.android.alexa.data;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
-import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
+import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayAudioItem;
+import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
+import com.willblaschko.android.alexa.system.AndroidSystemHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +31,8 @@ public class Event {
 
     Header header;
     Payload payload;
-    static List<Event> context;
-    public static final String STATE_PLAYING = "PLAYING";
-    public static final String STATE_IDLE = "IDLE";
-    public static String playState;
-
+    List<Event> context;
+    private static final String TAG = "Event";
     public Header getHeader() {
         return header;
     }
@@ -146,7 +146,7 @@ public class Event {
         }
 
         public String toJson(){
-            Log.d("event", "toJson: " + build().toJson());
+            Log.d(TAG, "toJson: " + build().toJson());
             return build().toJson();
         }
 
@@ -188,6 +188,11 @@ public class Event {
             return this;
         }
 
+        public Builder setPayloadplayerActivity(String playerActivity){
+            payload.playerActivity = playerActivity;
+            return this;
+        }
+
         public Builder setPayloadMuted(boolean muted){
             payload.muted = muted;
             return this;
@@ -205,16 +210,56 @@ public class Event {
             payload.offsetInMilliseconds = offsetInMilliseconds;
             return this;
         }
+
+        public Event getEvent() {
+            return event;
+        }
     }
 
-    public static String getSpeechRecognizerEvent(AvsItem item){
-        Builder builder = new Builder();
-        Log.d("Event", "getSpeechRecognizerEvent: " + item + "---" + playState);
-        context = new ArrayList<>();
-        if (item instanceof AvsPlayRemoteItem && !playState.equals(STATE_IDLE)) {
-            addRemoteContext(item);
+    public static String getSpeechRecognizerEvent(AvsItem item1){
+        List<Event> context = new ArrayList<>();
+        AlexaAudioPlayer audioPlayer= AlexaAudioPlayer.getInstance(null);
+        if(audioPlayer != null)
+        {
+            AvsItem item= audioPlayer.getCurrentItem();
+
+            if(item != null)
+            {
+                Builder PlaybackStateBuilder =new Builder();
+                Event event;
+                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+
+                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                            .setHeaderName("PlaybackState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(audioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }else{
+                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                            .setHeaderName("SpeechState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(audioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }
+                context.add(event);
+            }
         }
 
+        AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
+        if(sysHandle != null){
+            Builder speakerStateBuilder =new Builder();
+            Event event = speakerStateBuilder.setHeaderNamespace("Speaker")
+                    .setHeaderName("VolumeState")
+                    .setPayloadVolume(sysHandle.getVolume())
+                    .setPayloadMuted(sysHandle.isMute())
+                    .getEvent();
+            context.add(event);
+        }
+
+
+        Builder builder = new Builder();
         builder.setHeaderNamespace("SpeechRecognizer")
                 .setContext(context)
                 .setHeaderName("Recognize")
@@ -222,22 +267,8 @@ public class Event {
                 .setHeaderDialogRequestId("dialogRequest-321")
                 .setPayloadFormat("AUDIO_L16_RATE_16000_CHANNELS_1")
                 .setPayloadProfile("NEAR_FIELD");
+        Log.d(TAG,"getSpeechRecognizerEvent:"+builder.toJson());
         return builder.toJson();
-    }
-
-    private static void addRemoteContext(AvsItem item) {
-        Event event = new Event();
-        Header header = new Header();
-        header.setNamespace("AudioPlayer");
-        header.setName("PlaybackState");
-        Payload payload = new Payload();
-        payload.token = item.getToken();
-//        payload.offsetInMilliseconds = 0L;
-        payload.playerActivity = playState;
-        event.setHeader(header);
-        event.setPayload(payload);
-        context.add(event);
-        Log.d("Event", "getSpeechRecognizerEvent: " + context.size());
     }
 
     public static String getVolumeChangedEvent(long volume, boolean isMute){
@@ -286,32 +317,197 @@ public class Event {
         return builder.toJson();
     }
     public static String getPlaybackControllerPlayCommandIssued(){
+        List<Event> context = new ArrayList<>();
+        AlexaAudioPlayer AudioPlayer= AlexaAudioPlayer.getInstance(null);
+        if(AudioPlayer != null)
+        {
+            AvsItem item= AudioPlayer.getCurrentItem();
+
+            if(item != null)
+            {
+                Builder PlaybackStateBuilder =new Builder();
+                Event event;
+                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+
+                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                            .setHeaderName("PlaybackState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PAUSED")
+                            .getEvent();
+                }else{
+                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                            .setHeaderName("SpeechState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }
+                context.add(event);
+            }
+        }
+
+        AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
+        if(sysHandle != null){
+            Builder speakerStateBuilder =new Builder();
+            Event event = speakerStateBuilder.setHeaderNamespace("Speaker")
+                    .setHeaderName("VolumeState")
+                    .setPayloadVolume(sysHandle.getVolume())
+                    .setPayloadMuted(sysHandle.isMute())
+                    .getEvent();
+            context.add(event);
+        }
+
         Builder builder = new Builder();
         builder.setHeaderNamespace("PlaybackController")
+                .setContext(context)
                 .setHeaderName("PlayCommandIssued")
                 .setHeaderMessageId(getUuid());
         return builder.toJson();
     }
 
     public static String getPlaybackControllerPauseCommandIssued(){
+        List<Event> context = new ArrayList<>();
+        AlexaAudioPlayer AudioPlayer= AlexaAudioPlayer.getInstance(null);
+        if(AudioPlayer != null)
+        {
+            AvsItem item= AudioPlayer.getCurrentItem();
+
+            if(item != null)
+            {
+                Builder PlaybackStateBuilder =new Builder();
+                Event event;
+                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+
+                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                            .setHeaderName("PlaybackState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }else{
+                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                            .setHeaderName("SpeechState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }
+                context.add(event);
+            }
+        }
+
+        AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
+        if(sysHandle != null){
+            Builder speakerStateBuilder =new Builder();
+            Event event = speakerStateBuilder.setHeaderNamespace("Speaker")
+                    .setHeaderName("VolumeState")
+                    .setPayloadVolume(sysHandle.getVolume())
+                    .setPayloadMuted(sysHandle.isMute())
+                    .getEvent();
+            context.add(event);
+        }
+
         Builder builder = new Builder();
         builder.setHeaderNamespace("PlaybackController")
+                .setContext(context)
                 .setHeaderName("PauseCommandIssued")
                 .setHeaderMessageId(getUuid());
         return builder.toJson();
     }
 
     public static String getPlaybackControllerNextCommandIssued(){
+        List<Event> context = new ArrayList<>();
+        AlexaAudioPlayer AudioPlayer= AlexaAudioPlayer.getInstance(null);
+        if(AudioPlayer != null)
+        {
+            AvsItem item= AudioPlayer.getCurrentItem();
+
+            if(item != null)
+            {
+                Builder PlaybackStateBuilder =new Builder();
+                Event event;
+                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+
+                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                            .setHeaderName("PlaybackState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }else{
+                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                            .setHeaderName("SpeechState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }
+                context.add(event);
+            }
+        }
+        AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
+        if(sysHandle != null){
+            Builder speakerStateBuilder =new Builder();
+            Event event = speakerStateBuilder.setHeaderNamespace("Speaker")
+                    .setHeaderName("VolumeState")
+                    .setPayloadVolume(sysHandle.getVolume())
+                    .setPayloadMuted(sysHandle.isMute())
+                    .getEvent();
+            context.add(event);
+        }
+
         Builder builder = new Builder();
         builder.setHeaderNamespace("PlaybackController")
+                .setContext(context)
                 .setHeaderName("NextCommandIssued")
                 .setHeaderMessageId(getUuid());
         return builder.toJson();
     }
 
     public static String getPlaybackControllerPreviousCommandIssued(){
+        List<Event> context = new ArrayList<>();
+        AlexaAudioPlayer AudioPlayer= AlexaAudioPlayer.getInstance(null);
+        if(AudioPlayer != null)
+        {
+            AvsItem item= AudioPlayer.getCurrentItem();
+
+            if(item != null)
+            {
+                Builder PlaybackStateBuilder =new Builder();
+                Event event;
+                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+
+                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                            .setHeaderName("PlaybackState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }else{
+                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                            .setHeaderName("SpeechState")
+                            .setPayloadToken(item.getToken())
+                            .setPlayloadOffsetInMilliseconds(AudioPlayer.getCurrentPosition())
+                            .setPayloadplayerActivity("PLAYING")
+                            .getEvent();
+                }
+                context.add(event);
+            }
+        }
+        AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
+        if(sysHandle != null){
+            Builder speakerStateBuilder =new Builder();
+            Event event = speakerStateBuilder.setHeaderNamespace("Speaker")
+                    .setHeaderName("VolumeState")
+                    .setPayloadVolume(sysHandle.getVolume())
+                    .setPayloadMuted(sysHandle.isMute())
+                    .getEvent();
+            context.add(event);
+        }
         Builder builder = new Builder();
         builder.setHeaderNamespace("PlaybackController")
+                .setContext(context)
                 .setHeaderName("PreviousCommandIssued")
                 .setHeaderMessageId(getUuid());
         return builder.toJson();
@@ -379,7 +575,6 @@ public class Event {
 
     public static String getPlaybackStartedEvent(String token, long offset){
         Builder builder = new Builder();
-
         builder.setHeaderNamespace("AudioPlayer")
                 .setHeaderName("PlaybackStarted")
                 .setPlayloadOffsetInMilliseconds(offset)

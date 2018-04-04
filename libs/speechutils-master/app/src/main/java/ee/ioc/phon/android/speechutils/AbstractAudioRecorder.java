@@ -109,7 +109,7 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
      * If it gets full (status == -5) then the recording is stopped.
      */
     protected int getStatus(int numOfBytes, int len) {
-        Log.i("Read bytes: request/actual: " + len + "/" + numOfBytes);
+//        Log.i("Read bytes: request/actual: " + len + "/" + numOfBytes);
         if (numOfBytes < 0) {
             Log.e("AudioRecord error: " + numOfBytes);
             return numOfBytes;
@@ -190,7 +190,7 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
         int len = getLength() - startPos;
         byte[] bytes = new byte[len];
         System.arraycopy(mRecording, startPos, bytes, 0, len);
-        Log.i("Copied from: " + startPos + ": " + bytes.length + " bytes");
+//        Log.i("Copied from: " + startPos + ": " + bytes.length + " bytes");
         return bytes;
     }
 
@@ -216,7 +216,7 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
      */
     public boolean isPausing() {
         double pauseScore = getPauseScore();
-        Log.i("Pause score: " + pauseScore);
+//        Log.i("Pause score: " + pauseScore);
         return pauseScore > 7;
     }
 

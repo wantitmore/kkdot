@@ -154,7 +154,7 @@ public class EncodedAudioRecorder extends AbstractAudioRecorder {
         int len = getRecordedEncLength() - startPos;
         byte[] bytes = new byte[len];
         System.arraycopy(mRecordingEnc, startPos, bytes, 0, len);
-        Log.i("Copied from: " + startPos + ": " + bytes.length + " bytes");
+//        Log.i("Copied from: " + startPos + ": " + bytes.length + " bytes");
         return bytes;
     }
 

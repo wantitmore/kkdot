@@ -2,6 +2,8 @@ package com.willblaschko.android.alexa.data;
 
 import android.text.TextUtils;
 
+import java.util.List;
+
 /**
  * A catch-all Directive to classify return responses from the Amazon Alexa v20160207 API
  * Will handle calls to:
@@ -100,6 +102,12 @@ public class Directive {
         long timeoutInMilliseconds;
         String description;
         String code;
+        List<AssetsBean> assets;
+        List<String> assetPlayOrder;
+        long loopPauseInMilliSeconds;
+        long loopCount;
+        String backgroundAlertAsset;
+
 
         public String getUrl() {
             return url;
@@ -155,6 +163,72 @@ public class Directive {
 
         public String getEndpoint() {
             return endpoint;
+        }
+
+        public List<AssetsBean> getAssets() {
+            return assets;
+        }
+
+        public void setAssets(List<AssetsBean> assets) {
+            this.assets = assets;
+        }
+
+        public List<String> getAssetPlayOrder() {
+            return assetPlayOrder;
+        }
+
+        public void setAssetPlayOrder(List<String> assetPlayOrder) {
+            this.assetPlayOrder = assetPlayOrder;
+        }
+
+        public long getLoopPauseInMilliSeconds() {
+            return loopPauseInMilliSeconds;
+        }
+
+        public void setLoopPauseInMilliSeconds(long loopPauseInMilliSeconds) {
+            this.loopPauseInMilliSeconds = loopPauseInMilliSeconds;
+        }
+
+        public long getLoopCount() {
+            return loopCount;
+        }
+
+        public void setLoopCount(long loopCount) {
+            this.loopCount = loopCount;
+        }
+
+        public String getBackgroundAlertAsset() {
+            return backgroundAlertAsset;
+        }
+
+        public void setBackgroundAlertAsset(String backgroundAlertAsset) {
+            this.backgroundAlertAsset = backgroundAlertAsset;
+        }
+
+        public static class AssetsBean {
+            /**
+             * assetId : 3af1a946-40e5-3413-bc7b-085f8d220799
+             * url : https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_melodic_01.mp3
+             */
+
+            private String assetId;
+            private String url;
+
+            public String getAssetId() {
+                return assetId;
+            }
+
+            public void setAssetId(String assetId) {
+                this.assetId = assetId;
+            }
+
+            public String getUrl() {
+                return url;
+            }
+
+            public void setUrl(String url) {
+                this.url = url;
+            }
         }
     }
 

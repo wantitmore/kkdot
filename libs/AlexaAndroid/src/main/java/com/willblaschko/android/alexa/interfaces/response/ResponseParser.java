@@ -1,8 +1,5 @@
 package com.willblaschko.android.alexa.interfaces.response;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -57,9 +54,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import okhttp3.Headers;
-import okhttp3.Response;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
 
 import static okhttp3.internal.Util.UTF_8;
 
@@ -165,6 +162,7 @@ public class ResponseParser {
                     try {
                         jsonObject = new JSONObject(directive);
                         String nameSpace = jsonObject.getJSONObject("directive").getJSONObject("header").getString("namespace");
+                        Log.d(TAG, "parseResponse: nameSpace is " + nameSpace);
                         if ("SpeechRecognizer".equals(nameSpace)) {
                             RECOGNIZE_STATE = true;
                         } else {
@@ -181,30 +179,13 @@ public class ResponseParser {
                             Gson gson = new Gson();
                             Object renderObj = gson.fromJson(directive, targetClazz);
                             EventBus.getDefault().post(renderObj);
-                    } else {
+                    } else if (!"AudioPlayer".equals(nameSpace)) {
                         EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
                     }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    /*try {
-                        Gson gson = new Gson();
-                        Template1Bean template1Bean = gson.fromJson(directive, Template1Bean.class);
-                        if ("RenderTemplate".equals(template1Bean.getDirective().getHeader().getName())) {
-                            Log.d(TAG, "parseResponse: RenderTemplate");
-                            EventBus.getDefault().post(directive);
-                        }
-                        String subTitle = template1Bean.getDirective().getPayload().getTitle().getSubTitle();
-                        String mainTitle = template1Bean.getDirective().getPayload().getTitle().getMainTitle();
-                        Log.d(TAG, "onCreate: " + subTitle);
-                        if (subTitle.contains("newFun")) {
-                            //execute skill
-                            AlexaManager.getKKSkill = true;
-                            kkDirective = directive;
-                        }
-                    } catch (RuntimeException e) {
-                        e.printStackTrace();
-                    }*/
+
                     directives.add(getDirective(directive));
                 }
                 count++;
@@ -285,7 +266,7 @@ public class ResponseParser {
                 //stop play
                 return new AvsStopItem(directive.getPayload().getToken());
             case Directive.TYPE_SET_ALERT:
-                return new AvsSetAlertItem(directive.getPayload().getToken(), directive.getPayload().getType(), directive.getPayload().getScheduledTime());
+                return new AvsSetAlertItem(directive.getPayload().getToken(),/*, directive.getPayload().getType(), directive.getPayload().getScheduledTime()*/directive);
             case Directive.TYPE_DELETE_ALERT:
                 return new AvsDeleteAlertItem(directive.getPayload().getToken());
             case Directive.TYPE_SET_MUTE:
@@ -317,13 +298,6 @@ public class ResponseParser {
                 Log.e(TAG, "Unknown type found");
                 return null;
         }
-    }
-
-    public static void showDisplayCard(Directive directive) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        Message message = Message.obtain();
-        message.obj = directive;
-        handler.sendMessage(message);
     }
 
     public static String getBoundary(Response response) throws IOException {
@@ -393,7 +367,7 @@ public class ResponseParser {
     }
 
     /**
-     * Check if the directive controls KK
+     *
      */
     private static boolean isCard(String response) {
         return response.contains("RenderTemplate") || response.contains("RenderPlayerInfo");

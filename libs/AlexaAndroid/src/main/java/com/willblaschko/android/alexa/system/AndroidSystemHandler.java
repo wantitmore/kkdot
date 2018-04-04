@@ -4,11 +4,13 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
@@ -33,8 +35,17 @@ import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexa.utility.KKController;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.content.Context.AUDIO_SERVICE;
 
@@ -92,7 +103,9 @@ public class AndroidSystemHandler {
                 sendMediaButton(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
                 Log.i(TAG, "Media previous command issued");
             }else if (current instanceof AvsSetAlertItem){
+                Log.d(TAG, "handleItems: current item is " + ((AvsSetAlertItem) current).getType() + "--");
                 if(((AvsSetAlertItem) current).isAlarm()){
+                    Log.d(TAG, "handleItems: -------------->");
                     setAlarm((AvsSetAlertItem) current);
                 }else if(((AvsSetAlertItem) current).isTimer()){
                     setTimer((AvsSetAlertItem) current);
@@ -119,6 +132,17 @@ public class AndroidSystemHandler {
         AvsResponse response = new AvsResponse();
         response.add(item);
         handleItems(response);
+    }
+
+    public long getVolume(){
+        AudioManager am = (AudioManager) context.getSystemService(AUDIO_SERVICE);;
+        long vol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+        return vol;
+    }
+    public boolean isMute(){
+        AudioManager am = (AudioManager) context.getSystemService(AUDIO_SERVICE);
+        boolean mute = am.isStreamMute(AudioManager.STREAM_MUSIC);
+        return mute;
     }
 
     private void setTimer(final AvsSetAlertItem item){
@@ -154,15 +178,39 @@ public class AndroidSystemHandler {
 
     }
     private void setAlarm(AvsSetAlertItem item){
-        Intent i = new Intent(AlarmClock.ACTION_SET_ALARM);
+        // set an custome alarm
+        String scheduledTime = item.getScheduledTime();
+        Log.d(TAG, "setAlarm: ------->" + scheduledTime + "--" +System.currentTimeMillis());
+        List<String> assetPlayOrder = item.getAssetPlayOrder();
+        List<Directive.Payload.AssetsBean> assets = item.getAssets();
+        List<String> playUrls = new ArrayList<>();
+        for (String assetPlay : assetPlayOrder) {
+            for (Directive.Payload.AssetsBean assetBean : assets) {
+                if (!TextUtils.isEmpty(assetPlay) && assetPlay.equals(assetBean.getAssetId())) {
+                    playUrls.add(assetBean.getUrl());
+                }
+            }
+        }
         try {
-            i.putExtra(AlarmClock.EXTRA_HOUR, item.getHour());
-            i.putExtra(AlarmClock.EXTRA_MINUTES, item.getMinutes());
-            i.putExtra(AlarmClock.EXTRA_SKIP_UI, true);
-            context.startActivity(i);
-            AlexaManager.getInstance(context)
-                    .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
-        } catch (ParseException e) {
+            final MediaPlayer player = new MediaPlayer();/*MediaPlayer.create(context, Uri.parse(playUrls.get(0)));*/
+            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            player.setDataSource(context, Uri.parse(playUrls.get(0)));
+            player.prepareAsync();
+            final Timer timer = new Timer();
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                        @Override
+                        public void onPrepared(MediaPlayer mp) {
+                            Log.d(TAG, "onPrepared: play start");
+                            player.start();
+                        }
+                    });
+                }
+            };
+            timer.schedule(task, new Date(item.getScheduledTimeMillis()));
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -208,13 +256,12 @@ public class AndroidSystemHandler {
             }
         });
     }
+
     private void setMute(final boolean isMute){
         AudioManager am = (AudioManager) context.getSystemService(AUDIO_SERVICE);
         am.setStreamMute(AudioManager.STREAM_MUSIC, isMute);
-
         AlexaManager.getInstance(context).sendMutedEvent(isMute, null);
-
-        Log.i(TAG, "Mute set to : "+isMute);
+        Log.i(TAG, "Mute set to : " + isMute);
 
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
@@ -224,13 +271,6 @@ public class AndroidSystemHandler {
         });
 
 
-    }
-
-    public void showDisplayCard(Directive directive) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        Message message = Message.obtain();
-        message.obj = directive;
-        handler.sendMessage(message);
     }
 
     public void controlKK(String directive) {

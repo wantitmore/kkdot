@@ -128,6 +128,10 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
         statusBar.animate().alpha(0);
     }
 
+   @Override
+    protected void stateError(){
+
+   }
 
     @Override
     public void onBackStackChanged() {

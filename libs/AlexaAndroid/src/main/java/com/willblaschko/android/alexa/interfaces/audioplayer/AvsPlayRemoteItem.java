@@ -24,12 +24,12 @@ public class AvsPlayRemoteItem extends AvsItem {
         return mUrl;
     }
 
-    public long getStartOffset() {
-        return mStartOffset;
+    public void setStartoffset(long startOffset) {
+        mStartOffset = startOffset;
     }
 
-    public void setmStartOffset(long offset) {
-        mStartOffset = offset;
+    public long getStartOffset() {
+        return mStartOffset;
     }
 
 }

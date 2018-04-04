@@ -8,11 +8,12 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.view.View;
 
 /**
  * @author willb_000 on 5/5/2016.
  */
-public class RecorderView extends android.support.v7.widget.AppCompatImageView {
+public class RecorderView extends View {
 
     private final static String TAG = "RecorderView";
 
