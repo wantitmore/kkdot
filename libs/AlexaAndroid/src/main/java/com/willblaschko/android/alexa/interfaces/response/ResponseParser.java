@@ -54,8 +54,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import okhttp3.Headers;
+<<<<<<< HEAD
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+=======
+>>>>>>> efe50a60fed7a35f96618a91d67cd32824485c81
 import okhttp3.Response;
 
 import static okhttp3.internal.Util.UTF_8;
@@ -244,20 +247,6 @@ public class ResponseParser {
                 if(url.contains("cid:")){
                     return new AvsPlayAudioItem(directive.getPayload().getToken(), url, audio.get(url));
                 }else{
-                   if(url.contains("opml.radiotime.com")) {
-                        try {
-                            //opml.radiotime.com provides M3U file for audio play
-                            OkHttpClient client = new OkHttpClient();
-                            Request request = new Request.Builder()
-                                    .url(url)
-                                    .build();
-                            Response response = client.newCall(request).execute();
-                            url = response.body().string().trim();
-                            Log.d(TAG, "real url:" + url);
-                        } catch (Exception e) {
-                            Log.d(TAG, e.toString());
-                        }
-                    }
                     return new AvsPlayRemoteItem(directive.getPayload().getToken(), url, directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds());
                 }
             case Directive.TYPE_STOP_CAPTURE:

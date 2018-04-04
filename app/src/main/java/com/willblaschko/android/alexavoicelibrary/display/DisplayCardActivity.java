@@ -194,6 +194,11 @@ public class DisplayCardActivity extends BaseActivity {
             args.putParcelable("args", (Parcelable) renderObj);
             mShowingFragment.setArguments(args);
         }
+        if (renderObj instanceof PlayerInfoBean) {
+            moveVoiceViewToCenter();
+        } else if (!(renderObj instanceof String)) {
+            resetVoiceViewPosition();
+        }
         FragmentTransaction transaction = mFragmentManager.beginTransaction();
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 //        transaction.setCustomAnimations()
