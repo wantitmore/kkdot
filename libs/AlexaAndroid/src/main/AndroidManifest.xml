@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.willblaschko.android.alexa">
 
@@ -5,13 +6,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.INJECT_EVENTS" />
-    <uses-permission android:name="android.permission.SET_TIME"/>
+    <uses-permission android:name="android.permission.SET_TIME" />
 
     <application>
+        <service
+            android:name=".service.DownChannelService"
+            android:enabled="true" />
 
-        <service android:enabled="true" android:name=".service.DownChannelService" />
         <receiver
             android:name=".service.BootReceiver"
             android:enabled="true"
@@ -22,5 +25,11 @@
                 <action android:name="android.intent.action.PACKAGE_FIRST_LAUNCH" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".service.AlertService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
+
 </manifest>

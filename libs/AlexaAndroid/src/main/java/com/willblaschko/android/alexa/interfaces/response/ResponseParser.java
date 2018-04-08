@@ -54,11 +54,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import okhttp3.Headers;
-<<<<<<< HEAD
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-=======
->>>>>>> efe50a60fed7a35f96618a91d67cd32824485c81
 import okhttp3.Response;
 
 import static okhttp3.internal.Util.UTF_8;
@@ -118,7 +113,14 @@ public class ResponseParser {
         }
 
         String responseString = string(bytes);
-        Log.i(TAG, "response is " + responseString);
+
+        //only print json part to avoid print unprintable audio stream data
+        if( responseString.indexOf("Content-ID:") == -1) {
+            Log.i(TAG, "response is " + responseString);
+        }else{
+            Log.i(TAG, "response is " + responseString.substring(0,responseString.indexOf("Content-ID:")));
+        }
+
         if (checkBoundary) {
             final String responseTrim = responseString.trim();
             final String testBoundary = "--" + boundary;
@@ -255,7 +257,7 @@ public class ResponseParser {
                 //stop play
                 return new AvsStopItem(directive.getPayload().getToken());
             case Directive.TYPE_SET_ALERT:
-                return new AvsSetAlertItem(directive.getPayload().getToken(),/*, directive.getPayload().getType(), directive.getPayload().getScheduledTime()*/directive);
+                return new AvsSetAlertItem(directive.getPayload().getToken(), directive);
             case Directive.TYPE_DELETE_ALERT:
                 return new AvsDeleteAlertItem(directive.getPayload().getToken());
             case Directive.TYPE_SET_MUTE:

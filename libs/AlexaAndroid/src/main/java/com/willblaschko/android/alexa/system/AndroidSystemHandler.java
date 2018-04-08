@@ -1,13 +1,19 @@
 package com.willblaschko.android.alexa.system;
 
 import android.app.Instrumentation;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -32,12 +38,14 @@ import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
+import com.willblaschko.android.alexa.service.AlertService;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexa.utility.KKController;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -145,6 +153,20 @@ public class AndroidSystemHandler {
         return mute;
     }
 
+    private ServiceConnection conn = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+
+            AlertService.AlertBinder alertService = (AlertService.AlertBinder) service;
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
     private void setTimer(final AvsSetAlertItem item){
         try {
             int time = (int) ((item.getScheduledTimeMillis() - System.currentTimeMillis()) / 1000);
@@ -178,41 +200,20 @@ public class AndroidSystemHandler {
 
     }
     private void setAlarm(AvsSetAlertItem item){
-        // set an custome alarm
-        String scheduledTime = item.getScheduledTime();
-        Log.d(TAG, "setAlarm: ------->" + scheduledTime + "--" +System.currentTimeMillis());
-        List<String> assetPlayOrder = item.getAssetPlayOrder();
-        List<Directive.Payload.AssetsBean> assets = item.getAssets();
-        List<String> playUrls = new ArrayList<>();
-        for (String assetPlay : assetPlayOrder) {
-            for (Directive.Payload.AssetsBean assetBean : assets) {
-                if (!TextUtils.isEmpty(assetPlay) && assetPlay.equals(assetBean.getAssetId())) {
-                    playUrls.add(assetBean.getUrl());
-                }
-            }
-        }
-        try {
-            final MediaPlayer player = new MediaPlayer();/*MediaPlayer.create(context, Uri.parse(playUrls.get(0)));*/
-            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            player.setDataSource(context, Uri.parse(playUrls.get(0)));
-            player.prepareAsync();
-            final Timer timer = new Timer();
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                        @Override
-                        public void onPrepared(MediaPlayer mp) {
-                            Log.d(TAG, "onPrepared: play start");
-                            player.start();
-                        }
-                    });
-                }
-            };
-            timer.schedule(task, new Date(item.getScheduledTimeMillis()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Log.d(TAG, "setAlarm: ==========");
+        Intent intent = new Intent(context, AlertService.class);
+//        intent.put("alertItem", item);
+        Bundle bundle = new Bundle();
+        bundle.putString("type", item.getType());
+        bundle.putString("scheduledTime", item.getScheduledTime());
+        bundle.putSerializable("assets", (Serializable) item.getAssets());
+        bundle.putStringArrayList("assetPlayOrder", (ArrayList<String>) item.getAssetPlayOrder());
+        bundle.putLong("loopPauseInMilliSeconds", item.getLoopPauseInMilliSeconds());
+        bundle.putLong("loopCount", item.getLoopCount());
+        bundle.putString("backgroundAlertAsset", item.getBackgroundAlertAsset());
+        intent.putExtras(bundle);
+        context.startService(intent);
+        context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
     }
 
 

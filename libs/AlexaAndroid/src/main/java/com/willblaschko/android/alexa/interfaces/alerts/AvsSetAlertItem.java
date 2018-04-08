@@ -17,8 +17,9 @@ import java.util.Locale;
  * {@link com.willblaschko.android.alexa.data.Directive} response item type parsed so we can properly
  * deal with the incoming commands from the Alexa server.
  */
-public class AvsSetAlertItem extends AvsItem {
+public class AvsSetAlertItem extends AvsItem{
     private Directive directive;
+    String token;
     private String type;
     private String scheduledTime;
     private List<Directive.Payload.AssetsBean> assets;
@@ -40,8 +41,13 @@ public class AvsSetAlertItem extends AvsItem {
     public AvsSetAlertItem(String token, Directive directive){
         super(token);
         Log.d("AvsSetAlertItem", "AvsSetAlertItem: ");
+        this.token = token;
         this.directive = directive;
         payload = directive.getPayload();
+    }
+
+    public Directive.Payload getPayload() {
+        return payload;
     }
 
     public String getScheduledTime() {
@@ -64,7 +70,7 @@ public class AvsSetAlertItem extends AvsItem {
     }
 
     public Date getDate() throws ParseException {
-        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(scheduledTime);
+        return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(payload.getScheduledTime());
     }
 
     public String getType() {
@@ -126,5 +132,6 @@ public class AvsSetAlertItem extends AvsItem {
     public void setBackgroundAlertAsset(String backgroundAlertAsset) {
         this.backgroundAlertAsset = backgroundAlertAsset;
     }
+
 
 }

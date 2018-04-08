@@ -2,6 +2,7 @@ package com.willblaschko.android.alexa.data;
 
 import android.text.TextUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -88,7 +89,7 @@ public class Directive {
             return dialogRequestId;
         }
     }
-    public static class Payload{
+    public static class Payload implements Serializable{
         String url;
         String endpoint;
         String format;
@@ -205,7 +206,7 @@ public class Directive {
             this.backgroundAlertAsset = backgroundAlertAsset;
         }
 
-        public static class AssetsBean {
+        public static class AssetsBean implements Serializable {
             /**
              * assetId : 3af1a946-40e5-3413-bc7b-085f8d220799
              * url : https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_melodic_01.mp3
