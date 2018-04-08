@@ -40,6 +40,8 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import ee.ioc.phon.android.speechutils.RawAudioRecorder;
@@ -125,6 +127,7 @@ public class DisplayCardActivity extends BaseActivity {
         mVoiceStateView.setX((mScreenWidth - mVoiceStateView.getWidth()) / 2);
     }
 
+
     public void resetVoiceViewPosition() {
         Log.d(TAG, "reset position");
         mVoiceStateView.setX(mVoiceStateView.getLeft());
@@ -133,18 +136,19 @@ public class DisplayCardActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.RECORD_AUDIO)) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.RECORD_AUDIO},
-                        MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+        String[] permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        List<String> mPermissionList = new ArrayList<>();
+        mPermissionList.clear();
+        for (int i = 0; i < permissions.length; i++) {
+            if (ContextCompat.checkSelfPermission(this, permissions[i]) != PackageManager.PERMISSION_GRANTED) {
+                mPermissionList.add(permissions[i]);
             }
         }
+        if (!mPermissionList.isEmpty()) {
+            String[] permissionRequest = mPermissionList.toArray(new String[mPermissionList.size()]);
+            ActivityCompat.requestPermissions(DisplayCardActivity.this, permissionRequest, 1);
+        }
     }
-
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],

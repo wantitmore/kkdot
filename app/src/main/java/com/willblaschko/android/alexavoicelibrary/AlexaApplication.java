@@ -3,6 +3,7 @@ package com.willblaschko.android.alexavoicelibrary;
 import android.app.Application;
 import android.util.Log;
 
+import com.liulishuo.filedownloader.FileDownloader;
 import com.willblaschko.android.alexavoicelibrary.utility.SigningKey;
 
 /**
@@ -27,6 +28,7 @@ public class AlexaApplication extends Application {
         if(BuildConfig.DEBUG){
             Log.i("AlexaApplication", SigningKey.getCertificateMD5Fingerprint(this));
         }
+        FileDownloader.setup(this);
     }
 
     /**
