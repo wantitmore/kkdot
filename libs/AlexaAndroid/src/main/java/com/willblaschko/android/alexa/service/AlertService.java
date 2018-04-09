@@ -31,17 +31,20 @@ import java.util.TimerTask;
 public class AlertService extends Service {
 
     private static final String TAG = "AlertService";
+    private static final long SECOND_INTERVAL = 1000;
+    private static final long LASTING_RING_TIME = 60 * 60 * 1000;
+    private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
     public AlertBinder mBinder = new AlertBinder();
     private List<String> mPlayIds;
     private MediaPlayer mPlayer;
     private int mPlayPosition;
-    private long mLoopCount;
     private long mRealLoopCount = 1;
+
+    private long mStartAlertTime;
+    private long mLoopCount;
     private Map<String, String> mPlayMap;
-    private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
     private TimerTask mTask;
     private Timer timer;
-    private static final long SECOND_INTERVAL = 1000;
     private long mLoopPauseInMilliSeconds;
 
     // localUrl = /storage/emulated/0/AlexaVideoCache/*.mp3";
@@ -66,7 +69,7 @@ public class AlertService extends Service {
             assets = (List<Directive.Payload.AssetsBean>) bundle.getSerializable("assets");
             ArrayList<String> assetPlayOrder = bundle.getStringArrayList("assetPlayOrder");
             mLoopPauseInMilliSeconds = bundle.getLong("loopPauseInMilliSeconds");
-            mLoopCount = /*bundle.getLong("loopCount")*/3;
+            mLoopCount = bundle.getLong("loopCount");
             String backgroundAlertAsset = bundle.getString("backgroundAlertAsset");
             Log.d(TAG, "onStartCommand: type is " + (assets != null ? assets.size() : 0) + "--- " + mLoopPauseInMilliSeconds);
             mPlayMap = new HashMap<>();
@@ -96,6 +99,8 @@ public class AlertService extends Service {
                     @Override
                     public void run() {
                         Log.d(TAG, "run: -------------------------------------");
+                        stopPlayer();
+                        mStartAlertTime = System.currentTimeMillis();
                         playAlert(mPlayPosition);
 
                     }
@@ -108,7 +113,7 @@ public class AlertService extends Service {
             }
 
         }
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     private void playAlert(int position) {
@@ -149,12 +154,12 @@ public class AlertService extends Service {
             @Override
             public void onCompletion(MediaPlayer mp) {
 
-                if (mRealLoopCount < mLoopCount) {
+                if (mRealLoopCount < mLoopCount || mLoopCount == 0) {
                     Log.d(TAG, "onCompletion: realLoopCount is " + mRealLoopCount);
                     if (mPlayIds.size() - 1 > mPlayPosition) {
                         mPlayPosition++;
                         Log.d(TAG, "onCompletion: position is " + mPlayPosition);
-
+                        playAlert(mPlayPosition);
                     } else {
                         Log.d(TAG, "onCompletion: ===============");
                         new CountDownTimer(mLoopPauseInMilliSeconds, SECOND_INTERVAL) {
@@ -167,12 +172,18 @@ public class AlertService extends Service {
                             @Override
                             public void onFinish() {
                                 Log.d(TAG, "onFinish: start to next loop");
-                                mRealLoopCount++;
-                                mPlayPosition = 0;
+                                if (System.currentTimeMillis() - mStartAlertTime <= LASTING_RING_TIME) {
+                                    mRealLoopCount++;
+                                    mPlayPosition = 0;
+                                    playAlert(mPlayPosition);
+                                } else {
+                                    // sent stop event and stop
+                                    Log.d(TAG, "onFinish: stop to play");
+                                    stopPlayer();
+                                }
                             }
                         }.start();
                     }
-                    playAlert(mPlayPosition);
                 } else {
                     mRealLoopCount = 1;
                 }
@@ -184,6 +195,13 @@ public class AlertService extends Service {
                 Log.d(TAG, "onBufferingUpdate: -----------");
             }
         });
+    }
+
+    private void stopPlayer() {
+        if (mPlayer != null) {
+            mPlayer.stop();
+            mPlayer = null;
+        }
     }
 
     private void cancelTask() {
