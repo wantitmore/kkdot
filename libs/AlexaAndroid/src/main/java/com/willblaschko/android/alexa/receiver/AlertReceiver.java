@@ -1,181 +1,114 @@
-package com.willblaschko.android.alexa.service;
+package com.willblaschko.android.alexa.receiver;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Binder;
-import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
-import android.os.IBinder;
 import android.util.Log;
 
 import com.liulishuo.filedownloader.BaseDownloadTask;
 import com.liulishuo.filedownloader.FileDownloadListener;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.willblaschko.android.alexa.beans.AlertBean;
-import com.willblaschko.android.alexa.receiver.AlertReceiver;
 
-import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 
-public class AlertService extends Service {
+/**
+ * Created by user001 on 2018-4-10.
+ */
 
-    private static final String TAG = "AlertService";
+public class AlertReceiver extends BroadcastReceiver {
+
+    private static final String TAG = "AlertReceiver";
     private static final long SECOND_INTERVAL = 1000;
     private static final long LASTING_RING_TIME = 60 * 60 * 1000;
 
-    private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
-    public AlertBinder mBinder = new AlertBinder();
-    private List<String> mPlayIds;
-    private MediaPlayer mPlayer;
-    private int mPlayPosition;
-    private long mRealLoopCount = 1;
-    private long mStartAlertTime;
-    private Map<String, String> mPlayMap;
-    private TimerTask mTask;
-    private Timer timer;
-    private AlertReceiver alertReceiver;
-
-    private long mLoopCount;
-    private long mLoopPauseInMilliSeconds;
     private String mToken;
     private String mType;
     private String mScheduledTime;
-    private ArrayList<String> mAssetPlayOrder;
-    private String mBackgroundAlertAsset;
     private List<AlertBean.AssetsBean> mAssets;
-    private int mId;
-    private List<String> mAssetIds;
+    private List<String> mAssetPlayOrder;
+    private String mBackgroundAlertAsset;
+    private long mLoopCount;
+    private long mLoopPauseInMilliSeconds;
+
+    private Context mContext;
+    private Map<String, String> mPlayMap;
+    private List<String> mPlayIds;
+    private MediaPlayer mPlayer;
+    private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
+    private long mRealLoopCount = 1;
+    private int mPlayPosition;
+    private long mStartAlertTime;
     private List<String> mAssetUrls;
-
-    // localUrl = /storage/emulated/0/AlexaVideoCache/*.mp3";
-    public AlertService() {
-
-    }
+    private List<String> mAssetIds;
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    public void onReceive(Context context, Intent intent) {
+        mContext = context;
+        getData(intent);
+        mStartAlertTime = System.currentTimeMillis();
+        playAlert(0);
+
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
-        Bundle bundle = intent.getExtras();
-        Log.d(TAG, "onStartCommand: ======== " + bundle);
-        if (bundle != null) {
-            getAttrs(bundle);
-            setAlertTask();
-        }
-        return START_STICKY;
-    }
-
-    private void getAttrs(Bundle bundle) {
-        mType = bundle.getString("type");
-        mScheduledTime = bundle.getString("scheduledTime");
-        mAssets = (List<AlertBean.AssetsBean>) bundle.getSerializable("assets");
-        mAssetPlayOrder = bundle.getStringArrayList("assetPlayOrder");
-        mLoopPauseInMilliSeconds = bundle.getLong("loopPauseInMilliSeconds");
-        mLoopCount = /*bundle.getLong("loopCount")*/1;
-        mBackgroundAlertAsset = bundle.getString("backgroundAlertAsset");
-        mToken = bundle.getString("token");
-        Log.d(TAG, "onStartCommand: type is " + (mAssets != null ? mAssets.size() : 0) + "--- " + mLoopPauseInMilliSeconds + "-- " + mToken);
+    private void getData(Intent intent) {
+        int id = intent.getIntExtra("id", 0);
+        AlertBean alertBean = DataSupport.find(AlertBean.class, id);
+        mToken = alertBean.getToken();
+        mType = alertBean.getType();
+        mScheduledTime = alertBean.getScheduledTime();
+//        mAssets = alertBean.getAssets();
+        mAssetIds = alertBean.getAssetIds();
+        mAssetUrls = alertBean.getAssetUrls();
+        mAssetPlayOrder = alertBean.getAssetPlayOrder();
+        mBackgroundAlertAsset = alertBean.getBackgroundAlertAsset();
+        mLoopCount = alertBean.getLoopCount();
+        mLoopPauseInMilliSeconds = alertBean.getLoopPauseInMilliSeconds();
         mPlayMap = new HashMap<>();
-        mAssetIds = new ArrayList<>();
-        mAssetUrls = new ArrayList<>();
-        if (mAssets != null) {
+        /*if (mAssets != null) {
             for (AlertBean.AssetsBean assetBean : mAssets) {
                 mPlayMap.put(assetBean.getAssetId(), assetBean.getUrl());
-                mAssetIds.add(assetBean.getAssetId());
-                mAssetUrls.add(assetBean.getUrl());
+            }
+        }*/
+        if (mAssetIds != null && mAssetUrls != null) {
+            for (int position = 0; position < mAssetIds.size(); position++) {
+                mPlayMap.put(mAssetIds.get(position), mAssetUrls.get(position));
             }
         }
+        Log.d(TAG, "getData: -- " + mAssetPlayOrder.size() + ", mAssets is " + mAssets);
         //  set an custome alarm
         mPlayIds = new ArrayList<>();
         Set<Map.Entry<String, String>> entries = mPlayMap.entrySet();
+        Log.d(TAG, "getData: entris " + entries.size());
         if (mAssetPlayOrder != null) {
             for (String assetPlay : mAssetPlayOrder) {
-                if (mAssets != null) {
                     for (Map.Entry<String, String> playBean: entries) {
                         String playId = playBean.getKey();
+                        Log.d(TAG, "getData: playid is " + playId);
                         if (assetPlay.equals(playId)) {
                             mPlayIds.add(playId);
+                            Log.d(TAG, "getData: --------------------");
                         }
                     }
-                }
             }
-        }
-        saveData();
-    }
-
-    private void saveData() {
-        LitePal.getDatabase();
-        AlertBean alertBean = new AlertBean();
-        alertBean.setToken(mToken);
-        alertBean.setType(mType);
-        alertBean.setScheduledTime(mScheduledTime);
-//        alertBean.setAssets(mAssets);
-        alertBean.setAssetIds(mAssetIds);
-        alertBean.setAssetUrls(mAssetUrls);
-        alertBean.setAssetPlayOrder(mAssetPlayOrder);
-        alertBean.setBackgroundAlertAsset(mBackgroundAlertAsset);
-        alertBean.setLoopCount(mLoopCount);
-        alertBean.setLoopPauseInMilliSeconds(mLoopPauseInMilliSeconds);
-        alertBean.save();
-        mId = alertBean.getId();
-    }
-
-    private void setAlertTask() {
-        Log.d(TAG, "setAlertTask: -------------");
-        try {
-                /*timer = new Timer();
-                mTask = new TimerTask() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG, "run: -------------------------------------");
-                        stopPlayer();
-                        mStartAlertTime = System.currentTimeMillis();
-                        playAlert(mPlayPosition);
-                        AlexaManager.getInstance(AlertService.this).sendEvent(Event.getAlertStartedEvent(mToken), null);
-
-                    }
-                };
-                Log.d(TAG, "onStartCommand: time alarm is " + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(mScheduledTime));
-                timer.schedule(mTask, *//*new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(scheduledTime)*//*35000);*/
-
-
-            Intent intent = new Intent(this, AlertReceiver.class);
-            intent.putExtra("id", mId);
-            PendingIntent sender = PendingIntent.getBroadcast(
-                    this, mId, intent, 0);
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.add(Calendar.SECOND, 20);
-            AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
-            am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
-        } catch (Exception e) {
-            Log.d(TAG, "onStartCommand: error occur: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
     private void playAlert(int position) {
-        cancelTask();
+//        cancelTask();
         String playId = mPlayIds.get(position);
         String playUrl = mPlayMap.get(playId);
         Log.d(TAG, "playId size is " + (mPlayIds != null ? mPlayIds.size() : "null"));
@@ -190,11 +123,11 @@ public class AlertService extends Service {
             Log.d(TAG, "playAlert: file path is " + file.getAbsolutePath());
             if (file.exists()) {
                 Log.d(TAG, "playAlert: local--");
-                mPlayer.setDataSource(this, Uri.fromFile(file));
+                mPlayer.setDataSource(mContext, Uri.fromFile(file));
             } else {
                 Log.d(TAG, "playAlert: url--");
                 downloadFile(playId, playUrl);
-                mPlayer.setDataSource(this, Uri.parse(playUrl));
+                mPlayer.setDataSource(mContext, Uri.parse(playUrl));
             }
         } catch (IOException e) {
             Log.e(TAG, "playAlert: exception is " + e.getMessage());
@@ -254,25 +187,6 @@ public class AlertService extends Service {
             }
         });
     }
-
-    private void stopPlayer() {
-        if (mPlayer != null) {
-            mPlayer.stop();
-            mPlayer = null;
-        }
-    }
-
-    private void cancelTask() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-        if (mTask != null) {
-            mTask.cancel();
-            timer = null;
-        }
-    }
-
     private void downloadFile(String playId, String playUrl) {
         FileDownloader.getImpl().create(playUrl).setPath(mCacheDir + playId + ".mp3")
                 .setListener(new FileDownloadListener() {
@@ -307,36 +221,10 @@ public class AlertService extends Service {
                     }
                 }).start();
     }
-
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        return super.onUnbind(intent);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    public class AlertBinder extends Binder {
-
-        private AlertBinder() {
-        }
-
-        public void setType(String type) {
-            Log.d("AlertService", "setType: " + type);
-        }
-
-        public void setNewAlert() {
-            Log.d(TAG, "setNewAlert: -----");
+    private void stopPlayer() {
+        if (mPlayer != null) {
+            mPlayer.stop();
+            mPlayer = null;
         }
     }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        return mBinder;
-    }
-
 }

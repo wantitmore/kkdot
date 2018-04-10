@@ -163,7 +163,7 @@ public class AndroidSystemHandler {
         public void onServiceConnected(ComponentName name, IBinder service) {
 
             AlertService.AlertBinder alertService = (AlertService.AlertBinder) service;
-
+            alertService.setNewAlert();
         }
 
         @Override

@@ -11,6 +11,7 @@ import java.util.List;
 
 public class AlertBean extends DataSupport {
 
+    private int id;
     private String type;
     private String scheduledTime;
     private long loopPauseInMilliSeconds;
@@ -19,6 +20,16 @@ public class AlertBean extends DataSupport {
     private String backgroundAlertAsset;
     private List<AssetsBean> assets;
     private List<String> assetPlayOrder;
+    private List<String> assetIds;
+    private List<String> assetUrls;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getType() {
         return type;
@@ -108,5 +119,21 @@ public class AlertBean extends DataSupport {
         public void setUrl(String url) {
             this.url = url;
         }
+    }
+
+    public List<String> getAssetIds() {
+        return assetIds;
+    }
+
+    public void setAssetIds(List<String> assetIds) {
+        this.assetIds = assetIds;
+    }
+
+    public List<String> getAssetUrls() {
+        return assetUrls;
+    }
+
+    public void setAssetUrls(List<String> assetUrls) {
+        this.assetUrls = assetUrls;
     }
 }
