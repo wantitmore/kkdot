@@ -6,6 +6,8 @@ import android.util.Log;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.willblaschko.android.alexavoicelibrary.utility.SigningKey;
 
+import org.litepal.LitePal;
+
 /**
  * An application to handle all our initialization for the Alexa library before we
  * launch our VoiceLaunchActivity
@@ -23,7 +25,7 @@ public class AlexaApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mInstance = this;
-
+        LitePal.initialize(this);
         //if we run in DEBUG mode, we can get our signing key in the LogCat
         if(BuildConfig.DEBUG){
             Log.i("AlexaApplication", SigningKey.getCertificateMD5Fingerprint(this));

@@ -216,27 +216,26 @@ public class Event {
         }
     }
 
-    public static String getSpeechRecognizerEvent(AvsItem item1){
+    public static String getSpeechRecognizerEvent(AvsItem avsItem){
         List<Event> context = new ArrayList<>();
         AlexaAudioPlayer audioPlayer= AlexaAudioPlayer.getInstance(null);
-        if(audioPlayer != null)
-        {
+        if(audioPlayer != null) {
             AvsItem item= audioPlayer.getCurrentItem();
 
             if(item != null)
             {
-                Builder PlaybackStateBuilder =new Builder();
+                Builder playbackStateBuilder =new Builder();
                 Event event;
-                if(item instanceof AvsPlayAudioItem || !(item instanceof AvsSpeakItem)){
+                if(!(item instanceof AvsSpeakItem)){
 
-                    event=PlaybackStateBuilder.setHeaderNamespace("AudioPlayer")
+                    event = playbackStateBuilder.setHeaderNamespace("AudioPlayer")
                             .setHeaderName("PlaybackState")
                             .setPayloadToken(item.getToken())
                             .setPlayloadOffsetInMilliseconds(audioPlayer.getCurrentPosition())
                             .setPayloadplayerActivity("PLAYING")
                             .getEvent();
                 }else{
-                    event=PlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
+                    event = playbackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
                             .setHeaderName("SpeechState")
                             .setPayloadToken(item.getToken())
                             .setPlayloadOffsetInMilliseconds(audioPlayer.getCurrentPosition())
@@ -246,6 +245,15 @@ public class Event {
                 context.add(event);
             }
         }
+        Log.d(TAG, "getSpeechRecognizerEvent: ----item is " + avsItem);
+
+        // TODO:add alert context
+       /* Builder alertBuilder = new Builder();
+        Event alertContextEvent = alertBuilder
+                .setHeaderNamespace("Alerts")
+                .setHeaderName("AlertsState")
+                .setPayloadToken(i)*/
+
 
         AndroidSystemHandler sysHandle= AndroidSystemHandler.getInstance(null);
         if(sysHandle != null){

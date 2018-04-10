@@ -2,6 +2,8 @@ package com.willblaschko.android.alexa.data;
 
 import android.text.TextUtils;
 
+import com.willblaschko.android.alexa.beans.AlertBean;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -103,7 +105,7 @@ public class Directive {
         long timeoutInMilliseconds;
         String description;
         String code;
-        List<AssetsBean> assets;
+        List<AlertBean.AssetsBean> assets;
         List<String> assetPlayOrder;
         long loopPauseInMilliSeconds;
         long loopCount;
@@ -166,11 +168,11 @@ public class Directive {
             return endpoint;
         }
 
-        public List<AssetsBean> getAssets() {
+        public List<AlertBean.AssetsBean> getAssets() {
             return assets;
         }
 
-        public void setAssets(List<AssetsBean> assets) {
+        public void setAssets(List<AlertBean.AssetsBean> assets) {
             this.assets = assets;
         }
 
@@ -206,11 +208,11 @@ public class Directive {
             this.backgroundAlertAsset = backgroundAlertAsset;
         }
 
-        public static class AssetsBean implements Serializable {
-            /**
+        /*public static class AssetsBean implements Serializable {
+            *//**
              * assetId : 3af1a946-40e5-3413-bc7b-085f8d220799
              * url : https://s3.amazonaws.com/deeappservice.prod.notificationtones/system_alerts_melodic_01.mp3
-             */
+             *//*
 
             private String assetId;
             private String url;
@@ -230,7 +232,7 @@ public class Directive {
             public void setUrl(String url) {
                 this.url = url;
             }
-        }
+        }*/
     }
 
     public static class AudioItem{

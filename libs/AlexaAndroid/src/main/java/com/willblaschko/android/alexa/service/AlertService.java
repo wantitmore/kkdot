@@ -15,7 +15,11 @@ import android.util.Log;
 import com.liulishuo.filedownloader.BaseDownloadTask;
 import com.liulishuo.filedownloader.FileDownloadListener;
 import com.liulishuo.filedownloader.FileDownloader;
-import com.willblaschko.android.alexa.data.Directive;
+import com.willblaschko.android.alexa.AlexaManager;
+import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexa.data.Event;
+
+import org.litepal.LitePal;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,19 +37,26 @@ public class AlertService extends Service {
     private static final String TAG = "AlertService";
     private static final long SECOND_INTERVAL = 1000;
     private static final long LASTING_RING_TIME = 60 * 60 * 1000;
+
     private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
     public AlertBinder mBinder = new AlertBinder();
     private List<String> mPlayIds;
     private MediaPlayer mPlayer;
     private int mPlayPosition;
     private long mRealLoopCount = 1;
-
     private long mStartAlertTime;
-    private long mLoopCount;
     private Map<String, String> mPlayMap;
     private TimerTask mTask;
     private Timer timer;
+
+    private long mLoopCount;
     private long mLoopPauseInMilliSeconds;
+    private String mToken;
+    private String mType;
+    private String mScheduledTime;
+    private ArrayList<String> mAssetPlayOrder;
+    private String mBackgroundAlertAsset;
+    private List<AlertBean.AssetsBean> mAssets;
 
     // localUrl = /storage/emulated/0/AlexaVideoCache/*.mp3";
     public AlertService() {
@@ -59,61 +70,85 @@ public class AlertService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand: ======== ");
 
         Bundle bundle = intent.getExtras();
-        List<Directive.Payload.AssetsBean> assets;
+        Log.d(TAG, "onStartCommand: ======== " + bundle);
         if (bundle != null) {
-            String type = bundle.getString("type");
-            String scheduledTime = bundle.getString("scheduledTime");
-            assets = (List<Directive.Payload.AssetsBean>) bundle.getSerializable("assets");
-            ArrayList<String> assetPlayOrder = bundle.getStringArrayList("assetPlayOrder");
-            mLoopPauseInMilliSeconds = bundle.getLong("loopPauseInMilliSeconds");
-            mLoopCount = bundle.getLong("loopCount");
-            String backgroundAlertAsset = bundle.getString("backgroundAlertAsset");
-            Log.d(TAG, "onStartCommand: type is " + (assets != null ? assets.size() : 0) + "--- " + mLoopPauseInMilliSeconds);
-            mPlayMap = new HashMap<>();
-            if (assets != null) {
-                for (Directive.Payload.AssetsBean assetBean : assets) {
-                    mPlayMap.put(assetBean.getAssetId(), assetBean.getUrl());
-                }
+            getAttrs(bundle);
+            setAlertTask();
+        }
+        return START_STICKY;
+    }
+
+    private void getAttrs(Bundle bundle) {
+        mType = bundle.getString("type");
+        mScheduledTime = bundle.getString("scheduledTime");
+        mAssets = (List<AlertBean.AssetsBean>) bundle.getSerializable("assets");
+        mAssetPlayOrder = bundle.getStringArrayList("assetPlayOrder");
+        mLoopPauseInMilliSeconds = bundle.getLong("loopPauseInMilliSeconds");
+        mLoopCount = /*bundle.getLong("loopCount")*/1;
+        mBackgroundAlertAsset = bundle.getString("backgroundAlertAsset");
+        mToken = bundle.getString("token");
+        Log.d(TAG, "onStartCommand: type is " + (mAssets != null ? mAssets.size() : 0) + "--- " + mLoopPauseInMilliSeconds);
+        mPlayMap = new HashMap<>();
+        if (mAssets != null) {
+            for (AlertBean.AssetsBean assetBean : mAssets) {
+                mPlayMap.put(assetBean.getAssetId(), assetBean.getUrl());
             }
-            //  set an custome alarm
-            mPlayIds = new ArrayList<>();
-            Set<Map.Entry<String, String>> entries = mPlayMap.entrySet();
-            if (assetPlayOrder != null) {
-                for (String assetPlay : assetPlayOrder) {
-                    if (assets != null) {
-                        for (Map.Entry<String, String> playBean: entries) {
-                            String playId = playBean.getKey();
-                            if (assetPlay.equals(playId)) {
-                                mPlayIds.add(playId);
-                            }
+        }
+        //  set an custome alarm
+        mPlayIds = new ArrayList<>();
+        Set<Map.Entry<String, String>> entries = mPlayMap.entrySet();
+        if (mAssetPlayOrder != null) {
+            for (String assetPlay : mAssetPlayOrder) {
+                if (mAssets != null) {
+                    for (Map.Entry<String, String> playBean: entries) {
+                        String playId = playBean.getKey();
+                        if (assetPlay.equals(playId)) {
+                            mPlayIds.add(playId);
                         }
                     }
                 }
             }
-            try {
-                timer = new Timer();
-                mTask = new TimerTask() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG, "run: -------------------------------------");
-                        stopPlayer();
-                        mStartAlertTime = System.currentTimeMillis();
-                        playAlert(mPlayPosition);
-
-                    }
-                };
-                Log.d(TAG, "onStartCommand: time alarm is " + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(scheduledTime));
-                timer.schedule(mTask, /*new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(scheduledTime)*/5000);
-            } catch (Exception e) {
-                Log.d(TAG, "onStartCommand: error occur: " + e.getMessage());
-                e.printStackTrace();
-            }
-
         }
-        return START_STICKY;
+        saveData();
+    }
+
+    private void saveData() {
+        LitePal.getDatabase();
+        AlertBean alertBean = new AlertBean();
+        alertBean.setToken(mToken);
+        alertBean.setType(mType);
+        alertBean.setScheduledTime(mScheduledTime);
+        alertBean.setAssets(mAssets);
+        alertBean.setAssetPlayOrder(mAssetPlayOrder);
+        alertBean.setBackgroundAlertAsset(mBackgroundAlertAsset);
+        alertBean.setLoopCount(mLoopCount);
+        alertBean.setLoopPauseInMilliSeconds(mLoopPauseInMilliSeconds);
+        alertBean.save();
+    }
+
+    private void setAlertTask() {
+        Log.d(TAG, "setAlertTask: -------------");
+        try {
+            timer = new Timer();
+            mTask = new TimerTask() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "run: -------------------------------------");
+                    stopPlayer();
+                    mStartAlertTime = System.currentTimeMillis();
+                    playAlert(mPlayPosition);
+                    AlexaManager.getInstance(AlertService.this).sendEvent(Event.getAlertStartedEvent(mToken), null);
+
+                }
+            };
+            Log.d(TAG, "onStartCommand: time alarm is " + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(mScheduledTime));
+            timer.schedule(mTask, /*new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US).parse(scheduledTime)*/35000);
+        } catch (Exception e) {
+            Log.d(TAG, "onStartCommand: error occur: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void playAlert(int position) {

@@ -119,9 +119,14 @@ public class AndroidSystemHandler {
                     setTimer((AvsSetAlertItem) current);
                 }
             }else if (current instanceof AvsDeleteAlertItem){
-
+                deleteAlert(current);
             }
         }
+    }
+
+    private void deleteAlert(AvsItem deleteAlertItem) {
+        String token = deleteAlertItem.getToken();
+        
     }
 
 
@@ -211,9 +216,12 @@ public class AndroidSystemHandler {
         bundle.putLong("loopPauseInMilliSeconds", item.getLoopPauseInMilliSeconds());
         bundle.putLong("loopCount", item.getLoopCount());
         bundle.putString("backgroundAlertAsset", item.getBackgroundAlertAsset());
+        bundle.putString("token", item.getToken());
         intent.putExtras(bundle);
         context.startService(intent);
         context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
+        AlexaManager.getInstance(context)
+                .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
     }
 
 

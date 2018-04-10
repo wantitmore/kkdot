@@ -2,6 +2,7 @@ package com.willblaschko.android.alexa.interfaces.alerts;
 
 import android.util.Log;
 
+import com.willblaschko.android.alexa.beans.AlertBean;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 
@@ -22,7 +23,7 @@ public class AvsSetAlertItem extends AvsItem{
     String token;
     private String type;
     private String scheduledTime;
-    private List<Directive.Payload.AssetsBean> assets;
+    private List<AlertBean.AssetsBean> assets;
     private List<String> assetPlayOrder;
     private long loopPauseInMilliSeconds;
     private long loopCount;
@@ -93,11 +94,11 @@ public class AvsSetAlertItem extends AvsItem{
         return payload.getType().equals(REMINDER);
     }
 
-    public List<Directive.Payload.AssetsBean> getAssets() {
+    public List<AlertBean.AssetsBean> getAssets() {
         return payload.getAssets();
     }
 
-    public void setAssets(List<Directive.Payload.AssetsBean> assets) {
+    public void setAssets(List<AlertBean.AssetsBean> assets) {
         this.assets = assets;
     }
 
