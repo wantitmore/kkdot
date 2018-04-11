@@ -78,17 +78,11 @@ public class AlertReceiver extends BroadcastReceiver {
         mLoopCount = alertBean.getLoopCount();
         mLoopPauseInMilliSeconds = alertBean.getLoopPauseInMilliSeconds();
         mPlayMap = new HashMap<>();
-        /*if (mAssets != null) {
-            for (AlertBean.AssetsBean assetBean : mAssets) {
-                mPlayMap.put(assetBean.getAssetId(), assetBean.getUrl());
-            }
-        }*/
         if (mAssetIds != null && mAssetUrls != null) {
             for (int position = 0; position < mAssetIds.size(); position++) {
                 mPlayMap.put(mAssetIds.get(position), mAssetUrls.get(position));
             }
         }
-        Log.d(TAG, "getData: -- " + mAssetPlayOrder.size() + ", mAssets is " + mAssets);
         //  set an custome alarm
         mPlayIds = new ArrayList<>();
         Set<Map.Entry<String, String>> entries = mPlayMap.entrySet();

@@ -1,27 +1,25 @@
 package com.willblaschko.android.alexa.system;
 
+import android.annotation.TargetApi;
 import android.app.Instrumentation;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Parcelable;
 import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
+import com.willblaschko.android.alexa.beans.AlertBean;
 import com.willblaschko.android.alexa.callbacks.ImplAsyncCallback;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.data.Event;
@@ -42,18 +40,13 @@ import com.willblaschko.android.alexa.service.AlertService;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexa.utility.KKController;
 
-import org.apache.commons.lang3.StringUtils;
+import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static android.content.Context.AUDIO_SERVICE;
 
@@ -119,6 +112,7 @@ public class AndroidSystemHandler {
                     setTimer((AvsSetAlertItem) current);
                 }
             }else if (current instanceof AvsDeleteAlertItem){
+                Log.d(TAG, "handleItems: ---deleteAlert");
                 deleteAlert(current);
             }
         }
@@ -126,7 +120,19 @@ public class AndroidSystemHandler {
 
     private void deleteAlert(AvsItem deleteAlertItem) {
         String token = deleteAlertItem.getToken();
-        
+        Log.d(TAG, "deleteAlert: token is " + token);
+        List<AlertBean> alertBeans = DataSupport.where("token = ?", token).find(AlertBean.class);
+        Log.d(TAG, "deleteAlert: ---------" + alertBeans);
+        if (alertBeans != null && alertBeans.size() > 0) {
+            int id = alertBeans.get(0).getId();
+            Log.d(TAG, "deleteAlert: id is " + id);
+            DataSupport.delete(AlertBean.class, id);
+            Intent intent = new Intent(context, AlertService.class);
+            intent.putExtra("tag", "deleteAlert");
+            intent.putExtra("id", id);
+            intent.putExtra("token", token);
+            context.startService(intent);
+        }
     }
 
 
@@ -152,6 +158,7 @@ public class AndroidSystemHandler {
         long vol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
         return vol;
     }
+    @TargetApi(Build.VERSION_CODES.M)
     public boolean isMute(){
         AudioManager am = (AudioManager) context.getSystemService(AUDIO_SERVICE);
         boolean mute = am.isStreamMute(AudioManager.STREAM_MUSIC);
