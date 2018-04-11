@@ -156,7 +156,7 @@ public class AlertService extends Service {
                     this, mId, intent, 0);
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.add(Calendar.SECOND, 30);
+            calendar.add(Calendar.SECOND, 40);
 
             AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);

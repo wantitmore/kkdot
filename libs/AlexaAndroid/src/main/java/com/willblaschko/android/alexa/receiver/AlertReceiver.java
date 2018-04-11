@@ -57,15 +57,23 @@ public class AlertReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        Log.d(TAG, "onReceive: -------------------");
         mContext = context;
-        getData(intent);
-        mStartAlertTime = System.currentTimeMillis();
-        playAlert(0);
+        if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {
+            context.startService(new Intent(context, ResetAlertService.class));
+        } else {
+            getData(intent);
+            mStartAlertTime = System.currentTimeMillis();
+            playAlert(0);
+        }
 
     }
 
     private void getData(Intent intent) {
-        int id = intent.getIntExtra("id", 0);
+        int id = intent.getIntExtra("id", -1);
+        if (id <= 0) {
+            return;
+        }
         AlertBean alertBean = DataSupport.find(AlertBean.class, id);
         mToken = alertBean.getToken();
         mType = alertBean.getType();
@@ -75,7 +83,7 @@ public class AlertReceiver extends BroadcastReceiver {
         mAssetUrls = alertBean.getAssetUrls();
         mAssetPlayOrder = alertBean.getAssetPlayOrder();
         mBackgroundAlertAsset = alertBean.getBackgroundAlertAsset();
-        mLoopCount = alertBean.getLoopCount();
+        mLoopCount = /*alertBean.getLoopCount()*/2;
         mLoopPauseInMilliSeconds = alertBean.getLoopPauseInMilliSeconds();
         mPlayMap = new HashMap<>();
         if (mAssetIds != null && mAssetUrls != null) {
@@ -99,6 +107,8 @@ public class AlertReceiver extends BroadcastReceiver {
                     }
             }
         }
+        //delete alarming alert from db
+        DataSupport.delete(AlertBean.class, id);
     }
 
     private void playAlert(int position) {
