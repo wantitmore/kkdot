@@ -87,7 +87,7 @@ public class AlertReceiver extends BroadcastReceiver {
         mAssetUrls = alertBean.getAssetUrls();
         mAssetPlayOrder = alertBean.getAssetPlayOrder();
         mBackgroundAlertAsset = alertBean.getBackgroundAlertAsset();
-        mLoopCount = /*alertBean.getLoopCount()*/2;
+        mLoopCount = alertBean.getLoopCount();
         mLoopPauseInMilliSeconds = alertBean.getLoopPauseInMilliSeconds();
         mPlayMap = new HashMap<>();
         if (mAssetIds != null && mAssetUrls != null) {
@@ -156,6 +156,7 @@ public class AlertReceiver extends BroadcastReceiver {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 isStartEvent = false;
+                Log.d(TAG, "onCompletion: LoopCount is " + mLoopCount);
                 if (mRealLoopCount < mLoopCount || mLoopCount == 0) {
                     Log.d(TAG, "onCompletion: realLoopCount is " + mRealLoopCount);
                     if (mPlayIds.size() - 1 > mPlayPosition) {

@@ -99,7 +99,7 @@ public class AlertService extends Service {
         mAssets = (List<AlertBean.AssetsBean>) bundle.getSerializable("assets");
         mAssetPlayOrder = bundle.getStringArrayList("assetPlayOrder");
         mLoopPauseInMilliSeconds = bundle.getLong("loopPauseInMilliSeconds");
-        mLoopCount = /*bundle.getLong("loopCount")*/1;
+        mLoopCount = bundle.getLong("loopCount");
         mBackgroundAlertAsset = bundle.getString("backgroundAlertAsset");
         mToken = bundle.getString("token");
         Log.d(TAG, "onStartCommand: type is " + (mAssets != null ? mAssets.size() : 0) + "--- " + mLoopPauseInMilliSeconds + "-- " + mToken);
@@ -158,8 +158,8 @@ public class AlertService extends Service {
             long alertTime = TimeUtil.getAlertTime(mScheduledTime);
             Log.d(TAG, "setAlertTask: scheduleTime is -->" + mScheduledTime + ",now is " + System.currentTimeMillis());
             Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(alertTime);
-            calendar.add(Calendar.SECOND, 0);
+            calendar.setTimeInMillis(/*alertTime*/System.currentTimeMillis());
+            calendar.add(Calendar.SECOND, 6);
 
             AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
