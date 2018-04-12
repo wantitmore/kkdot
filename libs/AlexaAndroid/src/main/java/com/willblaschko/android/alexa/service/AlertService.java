@@ -14,6 +14,7 @@ import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
 import com.willblaschko.android.alexa.data.Event;
 import com.willblaschko.android.alexa.receiver.AlertReceiver;
+import com.willblaschko.android.alexa.utility.TimeUtil;
 
 import org.litepal.LitePal;
 
@@ -154,9 +155,11 @@ public class AlertService extends Service {
             intent.putExtra("id", mId);
             PendingIntent sender = PendingIntent.getBroadcast(
                     this, mId, intent, 0);
+            long alertTime = TimeUtil.getAlertTime(mScheduledTime);
+            Log.d(TAG, "setAlertTask: scheduleTime is -->" + mScheduledTime + ",now is " + System.currentTimeMillis());
             Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.add(Calendar.SECOND, 40);
+            calendar.setTimeInMillis(alertTime);
+            calendar.add(Calendar.SECOND, 0);
 
             AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);

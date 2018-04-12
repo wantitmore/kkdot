@@ -13,7 +13,9 @@ import android.util.Log;
 import com.liulishuo.filedownloader.BaseDownloadTask;
 import com.liulishuo.filedownloader.FileDownloadListener;
 import com.liulishuo.filedownloader.FileDownloader;
+import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexa.data.Event;
 
 import org.litepal.crud.DataSupport;
 
@@ -54,6 +56,7 @@ public class AlertReceiver extends BroadcastReceiver {
     private long mStartAlertTime;
     private List<String> mAssetUrls;
     private List<String> mAssetIds;
+    private boolean isStartEvent;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -64,6 +67,7 @@ public class AlertReceiver extends BroadcastReceiver {
         } else {
             getData(intent);
             mStartAlertTime = System.currentTimeMillis();
+            isStartEvent = true;
             playAlert(0);
         }
 
@@ -143,12 +147,15 @@ public class AlertReceiver extends BroadcastReceiver {
             public void onPrepared(MediaPlayer mp) {
                 Log.d(TAG, "onPrepared: play start");
                 mPlayer.start();
+                if (isStartEvent) {
+                    AlexaManager.getInstance(mContext).sendEvent(Event.getAlertStartedEvent(mToken), null);
+                }
             }
         });
         mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-
+                isStartEvent = false;
                 if (mRealLoopCount < mLoopCount || mLoopCount == 0) {
                     Log.d(TAG, "onCompletion: realLoopCount is " + mRealLoopCount);
                     if (mPlayIds.size() - 1 > mPlayPosition) {

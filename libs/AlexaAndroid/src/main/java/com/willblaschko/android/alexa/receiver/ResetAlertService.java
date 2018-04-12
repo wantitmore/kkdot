@@ -7,7 +7,10 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexa.data.Event;
+import com.willblaschko.android.alexa.utility.TimeUtil;
 
 import org.litepal.crud.DataSupport;
 
@@ -22,11 +25,8 @@ public class ResetAlertService extends IntentService {
 
     private int count4Test = 1;
     private static final String TAG = "ResetAlertService";
-    /**
-     * Creates an IntentService.  Invoked by your subclass's constructor.
-     *
-     *
-     */
+    private static final long ELAPSE_TIME = 30 * 60 * 1000;
+
     public ResetAlertService() {
         super("ResetAlertService");
     }
@@ -40,16 +40,28 @@ public class ResetAlertService extends IntentService {
         for (AlertBean alertBean : allAlertBeans) {
             try {
                 int id = alertBean.getId();
-                Intent alertIntent = new Intent(this, AlertReceiver.class);
-                alertIntent.putExtra("id", id);
-                PendingIntent sender = PendingIntent.getBroadcast(
-                        this, id, alertIntent, 0);
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTimeInMillis(System.currentTimeMillis());
-                calendar.add(Calendar.SECOND, 15 * (count4Test++));
+                String token = alertBean.getToken();
+                String scheduledTime = alertBean.getScheduledTime();
+                long alertTime = TimeUtil.getAlertTime(scheduledTime);
+                long elapsedTime = alertTime - System.currentTimeMillis();
 
-                AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
-                am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+                Log.d(TAG, "onHandleIntent: elap is " + elapsedTime + ", alertTIme is " + scheduledTime + ", restartTime is " + System.currentTimeMillis());
+                if (elapsedTime > ELAPSE_TIME) {
+                    //discard alert
+                    DataSupport.delete(AlertBean.class, id);
+                    AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(token), null);
+                } else if (elapsedTime <= 0) {
+                    Intent alertIntent = new Intent(this, AlertReceiver.class);
+                    alertIntent.putExtra("id", id);
+                    PendingIntent sender = PendingIntent.getBroadcast(
+                            this, id, alertIntent, 0);
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(/*System.currentTimeMillis()*/alertTime);
+                    //                calendar.add(Calendar.SECOND, 15 * (count4Test++));
+
+                    AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+                    am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+                }
             } catch (Exception e) {
                 Log.d("ResetAlertService", "onStartCommand: error occur: " + e.getMessage());
                 e.printStackTrace();
