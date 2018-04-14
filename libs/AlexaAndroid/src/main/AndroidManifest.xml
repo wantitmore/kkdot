@@ -31,8 +31,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.konka.alexa.stopAlert" />
-
                 <category android:name="android.intent.category.HOME" />
             </intent-filter>
         </receiver>
@@ -41,12 +39,17 @@
             android:name=".service.AlertService"
             android:enabled="true"
             android:exported="true" />
-        <service android:name=".receiver.ResetAlertService" />
+        <service android:name=".service.ResetAlertService" />
 
         <receiver
             android:name=".receiver.AlertHandlerReceiver"
             android:enabled="true"
-            android:exported="true"></receiver>
+            android:exported="true" />
+
+        <service
+            android:name=".service.AlertHandleService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>

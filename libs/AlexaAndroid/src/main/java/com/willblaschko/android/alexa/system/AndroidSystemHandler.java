@@ -2,15 +2,12 @@ package com.willblaschko.android.alexa.system;
 
 import android.annotation.TargetApi;
 import android.app.Instrumentation;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
@@ -35,7 +32,7 @@ import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.system.AvsSetEndpointItem;
-import com.willblaschko.android.alexa.service.AlertService;
+import com.willblaschko.android.alexa.receiver.AlertHandlerReceiver;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexa.utility.KKController;
 
@@ -125,13 +122,16 @@ public class AndroidSystemHandler {
         if (alertBeans != null && alertBeans.size() > 0) {
             int id = alertBeans.get(0).getId();
             Log.d(TAG, "deleteAlert: id is " + id);
-//            DataSupport.delete(AlertBean.class, id)
-            Intent intent = new Intent(context, AlertService.class);
+            /*boolean active = alertBeans.get(0).isActive();
+            if (active) {
+                context.bindService()
+            }*/
+            Intent intent = new Intent(context, AlertHandlerReceiver.class);
+
             intent.putExtra("tag", "deleteAlert");
             intent.putExtra("id", id);
             intent.putExtra("token", token);
-            context.startService(intent);
-//            context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
+            context.sendBroadcast(intent);
         }
     }
 
@@ -165,19 +165,19 @@ public class AndroidSystemHandler {
         return mute;
     }
 
-    private ServiceConnection conn = new ServiceConnection() {
+/*    private ServiceConnection conn = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
 
             AlertService.AlertBinder alertService = (AlertService.AlertBinder) service;
-            alertService.setNewAlert();
+            alertService.stopPlayer();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
 
         }
-    };
+    };*/
 
     private void setTimer(final AvsSetAlertItem item){
         try {
@@ -213,7 +213,9 @@ public class AndroidSystemHandler {
     }
     private void setAlarm(AvsSetAlertItem item){
         Log.d(TAG, "setAlarm: ==========");
-        Intent intent = new Intent(context, AlertService.class);
+
+        Intent intent = new Intent(context, AlertHandlerReceiver.class);
+
 //        intent.put("alertItem", item);
         Bundle bundle = new Bundle();
         bundle.putString("type", item.getType());
@@ -225,8 +227,10 @@ public class AndroidSystemHandler {
         bundle.putString("backgroundAlertAsset", item.getBackgroundAlertAsset());
         bundle.putString("token", item.getToken());
         intent.putExtras(bundle);
-        context.startService(intent);
-        context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
+
+        context.sendBroadcast(intent);
+//        context.startService(intent);
+//        context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
         AlexaManager.getInstance(context)
                 .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
     }

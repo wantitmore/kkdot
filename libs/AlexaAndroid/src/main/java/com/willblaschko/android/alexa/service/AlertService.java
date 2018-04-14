@@ -199,8 +199,9 @@ public class AlertService extends Service {
             Log.d("AlertService", "setType: " + type);
         }
 
-        public void setNewAlert() {
-            Log.d(TAG, "setNewAlert: -----");
+        public void stopPlayer() {
+            Log.d(TAG, "stopPlayer: -----");
+
         }
     }
 

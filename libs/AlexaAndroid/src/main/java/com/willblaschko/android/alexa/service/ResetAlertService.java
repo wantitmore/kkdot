@@ -1,4 +1,4 @@
-package com.willblaschko.android.alexa.receiver;
+package com.willblaschko.android.alexa.service;
 
 import android.app.AlarmManager;
 import android.app.IntentService;
@@ -51,13 +51,13 @@ public class ResetAlertService extends IntentService {
                     DataSupport.delete(AlertBean.class, id);
                     AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(token), null);
                 } else if (elapsedTime <= 0) {
-                    Intent alertIntent = new Intent(this, AlertReceiver.class);
+                    Intent alertIntent = new Intent(this, AlertHandleService.class);
                     alertIntent.putExtra("id", id);
-                    PendingIntent sender = PendingIntent.getBroadcast(
+                    PendingIntent sender = PendingIntent.getService(
                             this, id, alertIntent, 0);
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTimeInMillis(/*System.currentTimeMillis()*/alertTime);
-                    //                calendar.add(Calendar.SECOND, 15 * (count4Test++));
+//                                    calendar.add(Calendar.SECOND, 15 * (count4Test++));
 
                     AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
                     am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
