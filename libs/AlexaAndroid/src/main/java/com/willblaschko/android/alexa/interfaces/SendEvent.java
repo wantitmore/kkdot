@@ -1,5 +1,7 @@
 package com.willblaschko.android.alexa.interfaces;
 
+import android.util.Log;
+
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.connection.ClientUtil;
 
@@ -46,6 +48,7 @@ public abstract class SendEvent {
         //set our authentication access token header
         mRequestBuilder.addHeader("Authorization", "Bearer " + accessToken);
         String event = getEvent(item);
+        Log.i(TAG,"event:" +event);
 
         mBodyBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)

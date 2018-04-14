@@ -61,6 +61,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.liulishuo.filedownloader:library:1.6.4'
     compile 'org.litepal.android:core:1.6.0'
+    compile 'com.alibaba:fastjson:1.2.46'
 }
 
 android {

@@ -57,13 +57,17 @@ public class AlertReceiver extends BroadcastReceiver {
     private List<String> mAssetUrls;
     private List<String> mAssetIds;
     private boolean isStartEvent;
+    private int mId;
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "onReceive: -------------------");
+        Log.d(TAG, "onReceive: -------------------" + intent.getAction());
         mContext = context;
         if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {
             context.startService(new Intent(context, ResetAlertService.class));
+        } else if (("com.konka.alexa.stopAlert").equals(intent.getAction())) {
+            Log.d(TAG, "onReceive: --------------------->");
+            stopPlayer();
         } else {
             getData(intent);
             mStartAlertTime = System.currentTimeMillis();
@@ -74,11 +78,11 @@ public class AlertReceiver extends BroadcastReceiver {
     }
 
     private void getData(Intent intent) {
-        int id = intent.getIntExtra("id", -1);
-        if (id <= 0) {
+        mId = intent.getIntExtra("id", -1);
+        if (mId <= 0) {
             return;
         }
-        AlertBean alertBean = DataSupport.find(AlertBean.class, id);
+        AlertBean alertBean = DataSupport.find(AlertBean.class, mId);
         mToken = alertBean.getToken();
         mType = alertBean.getType();
         mScheduledTime = alertBean.getScheduledTime();
@@ -89,6 +93,10 @@ public class AlertReceiver extends BroadcastReceiver {
         mBackgroundAlertAsset = alertBean.getBackgroundAlertAsset();
         mLoopCount = alertBean.getLoopCount();
         mLoopPauseInMilliSeconds = alertBean.getLoopPauseInMilliSeconds();
+        alertBean.setActive(true);
+        alertBean.save();
+        List<AlertBean> alertBeans = DataSupport.findAll(AlertBean.class);
+        Log.d(TAG, "getData: ---------------" + alertBeans.size());
         mPlayMap = new HashMap<>();
         if (mAssetIds != null && mAssetUrls != null) {
             for (int position = 0; position < mAssetIds.size(); position++) {
@@ -111,8 +119,6 @@ public class AlertReceiver extends BroadcastReceiver {
                     }
             }
         }
-        //delete alarming alert from db
-        DataSupport.delete(AlertBean.class, id);
     }
 
     private void playAlert(int position) {
@@ -164,12 +170,12 @@ public class AlertReceiver extends BroadcastReceiver {
                         Log.d(TAG, "onCompletion: position is " + mPlayPosition);
                         playAlert(mPlayPosition);
                     } else {
-                        Log.d(TAG, "onCompletion: ===============");
+//                        Log.d(TAG, "onCompletion: ===============");
                         new CountDownTimer(mLoopPauseInMilliSeconds, SECOND_INTERVAL) {
                             @Override
                             public void onTick(long millisUntilFinished) {
                                 // TODO Auto-generated method stub
-                                Log.d(TAG, "onTick: --------------------------");
+//                                Log.d(TAG, "onTick: --------------------------");
                             }
 
                             @Override
@@ -183,6 +189,9 @@ public class AlertReceiver extends BroadcastReceiver {
                                     // sent stop event and stop
                                     Log.d(TAG, "onFinish: stop to play");
                                     stopPlayer();
+                                    //delete alarming alert from db after finishing sounding
+                                    //TODO:
+                                    DataSupport.delete(AlertBean.class, mId);
                                 }
                             }
                         }.start();
@@ -235,8 +244,10 @@ public class AlertReceiver extends BroadcastReceiver {
     }
     private void stopPlayer() {
         if (mPlayer != null) {
+            Log.d(TAG, "stopPlayer: for test");
             mPlayer.stop();
             mPlayer = null;
+            AlexaManager.getInstance(mContext).sendEvent(Event.getAlertStoppedEvent(mToken), null);
         }
     }
 }

@@ -35,6 +35,8 @@ public class AlexaAudioPlayer {
     private MediaPlayer mMediaPlayer;
     private Context mContext;
     private AvsItem mItem;
+    private AvsPlayRemoteItem mlastPlayRemoteItem;
+    private AvsSpeakItem mlastSpeakItem;
     private final List<Callback> mCallbacks = new ArrayList<>();
 
     /**
@@ -52,7 +54,7 @@ public class AlexaAudioPlayer {
      * @return our instance of the AlexaAudioPlayer
      */
     public static AlexaAudioPlayer getInstance(Context context) {
-        if (mInstance == null) {
+        if (mInstance == null && context != null) {
             mInstance = new AlexaAudioPlayer(context);
             trimCache(context);
         }
@@ -121,6 +123,14 @@ public class AlexaAudioPlayer {
         return mItem;
     }
 
+    public AvsSpeakItem getLastAvsSpeakItem(){
+        return mlastSpeakItem;
+    }
+
+    public AvsPlayRemoteItem getLastAvsPlayRemoteItem(){
+        return mlastPlayRemoteItem;
+    }
+
     /**
      * Remove a callback from our AlexaAudioPlayer, this is removed from our list of callbacks
      * @param callback Callback that listens to changes of player state
@@ -186,6 +196,10 @@ public class AlexaAudioPlayer {
         } else if (mItem instanceof AvsPlayRemoteItem) {
             //cast our item for easy access
             AvsPlayRemoteItem playItem = (AvsPlayRemoteItem) item;
+            mlastPlayRemoteItem =playItem;
+            playItem.setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_PLAYING);
+            Log.i(TAG,"play AvsPlayRemoteItem mItem playeractivity:"+((AvsPlayRemoteItem) mItem).getPlayerAcivity()
+                    +",mlastPlayRemoteItem:"+mlastPlayRemoteItem.getPlayerAcivity());
             try {
                 //set stream
                 getMediaPlayer().setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -216,6 +230,10 @@ public class AlexaAudioPlayer {
         } else if (mItem instanceof AvsSpeakItem) {
             //cast our item for easy access
             AvsSpeakItem playItem = (AvsSpeakItem) item;
+            mlastSpeakItem = playItem;
+            playItem.setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_PLAYING);
+            Log.i(TAG, "play AvsSpeakItem mItem playeractivity:" + ((AvsSpeakItem) mItem).getPlayerAcivity()
+                    + ",mlastSpeakItem:" + mlastSpeakItem.getPlayerAcivity());
             //write out our raw audio data to a file
             File path = new File(mContext.getCacheDir(), System.currentTimeMillis() + ".mp3");
             FileOutputStream fos = null;
@@ -266,6 +284,12 @@ public class AlexaAudioPlayer {
      * A helper function to stop the MediaPlayer
      */
     public void stop() {
+        if(mItem instanceof AvsPlayRemoteItem){
+            ((AvsPlayRemoteItem) mItem).setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_STOPPED);
+        }
+        else if(mItem instanceof AvsSpeakItem){
+            ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
+        }
         getMediaPlayer().stop();
     }
     public int getCurrentPosition()       { return getMediaPlayer().getCurrentPosition();}
@@ -337,7 +361,20 @@ public class AlexaAudioPlayer {
     private MediaPlayer.OnCompletionListener mCompletionListener = new MediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(MediaPlayer mp) {
+
+            if(mItem instanceof AvsPlayRemoteItem){
+                ((AvsPlayRemoteItem) mItem).setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_FINISHED);
+                Log.i(TAG, "  AvsPlayRemoteItem playeractivity:" + ((AvsPlayRemoteItem) mItem).getPlayerAcivity()
+                        + ",mlastPlayRemoteItem:" + mlastPlayRemoteItem.getPlayerAcivity());
+            }
+            else if(mItem instanceof AvsSpeakItem){
+                ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
+                Log.i(TAG, "onCompletion AvsSpeakItem playeractivity:" + ((AvsSpeakItem) mItem).getPlayerAcivity()
+                        + ",mlastSpeakItem:" + mlastSpeakItem.getPlayerAcivity());
+            }
+
             for (Callback callback : mCallbacks) {
+                Log.i(TAG,"onCompletion getCurrentPosition:"+  mMediaPlayer.getCurrentPosition());
                 callback.playerProgress(mItem, 1, 1);
                 callback.itemComplete(mItem);
             }
@@ -355,7 +392,6 @@ public class AlexaAudioPlayer {
                 callback.playerProgress(mItem, mMediaPlayer.getCurrentPosition(), 0);
             }
             mMediaPlayer.start();
-
             if(getCurrentItem() instanceof AvsPlayRemoteItem) {
                 mMediaPlayer.seekTo((int) ((AvsPlayRemoteItem) getCurrentItem()).getStartOffset());
             }
@@ -365,6 +401,12 @@ public class AlexaAudioPlayer {
                     try {
                         while (getMediaPlayer() != null && getMediaPlayer().isPlaying()) {
                             int pos = getMediaPlayer().getCurrentPosition();
+                            if(mItem instanceof AvsPlayRemoteItem){
+                                ((AvsPlayRemoteItem) mItem).setStartoffset(pos);
+                            }
+                            else if(mItem instanceof AvsSpeakItem){
+                                ((AvsSpeakItem) mItem).setOffset(pos);
+                            }
                             final float percent = (float) pos / (float) getMediaPlayer().getDuration();
                             postProgress(percent);
                             try {
@@ -388,6 +430,14 @@ public class AlexaAudioPlayer {
     private MediaPlayer.OnErrorListener mErrorListener = new MediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
+
+            if(mItem instanceof AvsPlayRemoteItem){
+                ((AvsPlayRemoteItem) mItem).setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_STOPPED);
+            }
+            else if(mItem instanceof AvsSpeakItem){
+                ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
+            }
+
             for (Callback callback : mCallbacks) {
                 boolean response = callback.playerError(mItem, what, extra);
                 if (response) {

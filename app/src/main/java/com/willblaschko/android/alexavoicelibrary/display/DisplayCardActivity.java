@@ -1,6 +1,5 @@
 package com.willblaschko.android.alexavoicelibrary.display;
 
-import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -9,17 +8,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
@@ -40,8 +34,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import ee.ioc.phon.android.speechutils.RawAudioRecorder;
@@ -136,34 +128,6 @@ public class DisplayCardActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        String[] permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-        List<String> mPermissionList = new ArrayList<>();
-        mPermissionList.clear();
-        for (int i = 0; i < permissions.length; i++) {
-            if (ContextCompat.checkSelfPermission(this, permissions[i]) != PackageManager.PERMISSION_GRANTED) {
-                mPermissionList.add(permissions[i]);
-            }
-        }
-        if (!mPermissionList.isEmpty()) {
-            String[] permissionRequest = mPermissionList.toArray(new String[mPermissionList.size()]);
-            ActivityCompat.requestPermissions(DisplayCardActivity.this, permissionRequest, 1);
-        }
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_RECORD_AUDIO: {
-                // If request is cancelled, the result arrays are empty.
-                if (!(grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Toast.makeText(this, "Record audio permission deny", Toast.LENGTH_SHORT).show();
-                }
-            }
-            default:
-                break;
-        }
     }
 
     private void search(){
@@ -212,7 +176,7 @@ public class DisplayCardActivity extends BaseActivity {
         } else if (!(renderObj instanceof String)) {
             resetVoiceViewPosition();
         }*/
-        transaction.replace(R.id.main_display_content, mShowingFragment).commit();
+        transaction.replace(R.id.main_display_content, mShowingFragment).commitAllowingStateLoss();
      }
 
 

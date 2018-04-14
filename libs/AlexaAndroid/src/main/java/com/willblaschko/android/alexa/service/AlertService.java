@@ -17,6 +17,7 @@ import com.willblaschko.android.alexa.receiver.AlertReceiver;
 import com.willblaschko.android.alexa.utility.TimeUtil;
 
 import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -86,6 +87,16 @@ public class AlertService extends Service {
                     intent, 0);
             AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
             am.cancel(pi);
+            AlertBean alertBean = DataSupport.find(AlertBean.class, deleteId);
+            boolean active = alertBean.isActive();
+            Log.d(TAG, "cancelAlertTask: isActive " + active);
+            if (active) {
+                Log.d(TAG, "cancelAlertTask: ------------------------");
+
+                sendBroadcast(new Intent("com.konka.alexa.stopAlert"));
+            }
+            Log.d(TAG, "cancelAlertTask: for test");
+            DataSupport.delete(AlertBean.class, deleteId);
             AlexaManager.getInstance(this).sendEvent(Event.getDeleteAlertSucceededEvent(token), null);
         } catch (Exception e) {
             AlexaManager.getInstance(this).sendEvent(Event.getDeleteAlertFailedEvent(token), null);
@@ -151,7 +162,7 @@ public class AlertService extends Service {
     private void setAlertTask() {
         Log.d(TAG, "setAlertTask: -------------" + PendingIntent.FLAG_CANCEL_CURRENT + "-" + PendingIntent.FLAG_UPDATE_CURRENT);
         try {
-            Intent intent = new Intent(this, AlertReceiver.class);
+            Intent intent = new Intent(this, AlertService.class);
             intent.putExtra("id", mId);
             PendingIntent sender = PendingIntent.getBroadcast(
                     this, mId, intent, 0);
@@ -159,7 +170,7 @@ public class AlertService extends Service {
             Log.d(TAG, "setAlertTask: scheduleTime is -->" + mScheduledTime + ",now is " + System.currentTimeMillis());
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(/*alertTime*/System.currentTimeMillis());
-            calendar.add(Calendar.SECOND, 6);
+            calendar.add(Calendar.SECOND, 5);
 
             AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);

@@ -22,6 +22,7 @@ public class AlertBean extends DataSupport {
     private List<String> assetPlayOrder;
     private List<String> assetIds;
     private List<String> assetUrls;
+    private boolean active;
 
     public int getId() {
         return id;
@@ -135,5 +136,13 @@ public class AlertBean extends DataSupport {
 
     public void setAssetUrls(List<String> assetUrls) {
         this.assetUrls = assetUrls;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

@@ -431,8 +431,8 @@ public class AlexaManager {
      * @param isMute mute state as reported by the {@link com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem} Directive
      * @param callback
      */
-    public void sendMutedEvent(final boolean isMute, @Nullable final AsyncCallback<AvsResponse, Exception> callback){
-        sendEvent(Event.getMuteEvent(isMute), callback);
+    public void sendMutedEvent(final long volume,final boolean isMute, @Nullable final AsyncCallback<AvsResponse, Exception> callback){
+        sendEvent(Event.getMuteEvent(volume,isMute), callback);
     }
 
     /**
@@ -512,6 +512,7 @@ public class AlexaManager {
      */
     public void sendEvent(final String event, final AsyncCallback<AvsResponse, Exception> callback){
         //check if the user is already logged in
+        Log.i(TAG,"sendEvent:"+event);
         mAuthorizationManager.checkLoggedIn(mContext, new ImplCheckLoggedInCallback() {
 
             @Override

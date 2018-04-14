@@ -1,11 +1,17 @@
 package com.willblaschko.android.alexavoicelibrary;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.AuthorizationManager;
@@ -20,6 +26,9 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUCT_ID;
 
 public class LoginActivity extends Activity implements View.OnClickListener{
@@ -31,6 +40,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
     private View mloginLayout;
     private View mThinsTryLayout;
     private Button mDone;
+    private final static int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +48,40 @@ public class LoginActivity extends Activity implements View.OnClickListener{
         setContentView(R.layout.activity_login2);
         initView();
         initListener();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String[] permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        List<String> mPermissionList = new ArrayList<>();
+        mPermissionList.clear();
+        for (int i = 0; i < permissions.length; i++) {
+            if (ContextCompat.checkSelfPermission(this, permissions[i]) != PackageManager.PERMISSION_GRANTED) {
+                mPermissionList.add(permissions[i]);
+            }
+        }
+        if (!mPermissionList.isEmpty()) {
+            String[] permissionRequest = mPermissionList.toArray(new String[mPermissionList.size()]);
+            ActivityCompat.requestPermissions(this, permissionRequest, 1);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_RECORD_AUDIO: {
+                // If request is cancelled, the result arrays are empty.
+                if (!(grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    Toast.makeText(this, "Record audio permission deny", Toast.LENGTH_SHORT).show();
+                }
+            }
+            default:
+                break;
+        }
     }
 
     @Override

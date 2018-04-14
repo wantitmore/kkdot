@@ -16,7 +16,6 @@ import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
@@ -126,12 +125,13 @@ public class AndroidSystemHandler {
         if (alertBeans != null && alertBeans.size() > 0) {
             int id = alertBeans.get(0).getId();
             Log.d(TAG, "deleteAlert: id is " + id);
-            DataSupport.delete(AlertBean.class, id);
+//            DataSupport.delete(AlertBean.class, id)
             Intent intent = new Intent(context, AlertService.class);
             intent.putExtra("tag", "deleteAlert");
             intent.putExtra("id", id);
             intent.putExtra("token", token);
             context.startService(intent);
+//            context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -257,10 +257,10 @@ public class AndroidSystemHandler {
         } else {
             vol = volume * max / 100;
         }
-        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) vol, AudioManager.FLAG_VIBRATE);
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) vol, AudioManager.FLAG_VIBRATE|AudioManager.FLAG_SHOW_UI);
 
-        AlexaManager.getInstance(context).sendVolumeChangedEvent(volume, vol == 0, null);
-
+        AlexaManager.getInstance(context).sendVolumeChangedEvent(vol, isMute(), null);
+        /*
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -271,20 +271,22 @@ public class AndroidSystemHandler {
                 }
             }
         });
+        */
     }
 
     private void setMute(final boolean isMute){
         AudioManager am = (AudioManager) context.getSystemService(AUDIO_SERVICE);
         am.setStreamMute(AudioManager.STREAM_MUSIC, isMute);
-        AlexaManager.getInstance(context).sendMutedEvent(isMute, null);
+        AlexaManager.getInstance(context).sendMutedEvent(getVolume(),isMute, null);
         Log.i(TAG, "Mute set to : " + isMute);
-
+        /*
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(context, "Volume " + (isMute ? "muted" : "unmuted"), Toast.LENGTH_SHORT).show();
             }
         });
+        */
 
 
     }

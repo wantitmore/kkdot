@@ -167,22 +167,26 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         public void itemComplete(AvsItem completedItem) {
             almostDoneFired = false;
             playbackStartedFired = false;
+
+            if (completedItem instanceof AvsPlayContentItem || completedItem == null) {
+                return;
+            }
             avsQueue.remove(completedItem);
             if(completedItem instanceof AvsSpeakItem){
                 setState(STATE_FINISHED);
             }
-            checkQueue();
-            if (completedItem instanceof AvsPlayContentItem || completedItem == null) {
-                return;
-            }
-            //if(BuildConfig.DEBUG)
-            if (avsQueue.size() <= 0) {
-                fadeOutView();
-            }
+
             {
                 Log.i(TAG, "Complete " + completedItem.getToken() + " fired");
             }
             sendPlaybackFinishedEvent(completedItem);
+
+            checkQueue();
+
+            //if(BuildConfig.DEBUG)
+            if (avsQueue.size() <= 0) {
+                fadeOutView();
+            }
         }
 
         @Override
@@ -300,6 +304,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     checkAfter = false;
                     response.remove(i);
                 }else if(response.get(i) instanceof AvsStopItem && audioPlayer.isPlaying()){
+                    addTotail = false;
                     avsQueue.remove(audioPlayer.getCurrentItem());
                 }else if(response.get(i) instanceof  AvsSpeakItem && audioPlayer.isPlaying())
                 {
@@ -381,7 +386,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             audioPlayer.stop();
             avsQueue.clear();
             startListening();
-        } else if (current instanceof AvsSetVolumeItem) {
+        }
+        //these items have been executed in AndroidSystemHandler.handleItems() and didn't need be executed one more
+        /* else if (current instanceof AvsSetVolumeItem) {
             //set our volume
             setVolume(((AvsSetVolumeItem) current).getVolume());
             avsQueue.remove(current);
@@ -413,7 +420,8 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
             Log.i(TAG, "Media previous command issued");
             avsQueue.remove(current);
-        } else if (current instanceof AvsResponseException) {
+        } */
+        else if (current instanceof AvsResponseException) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -427,11 +435,16 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
             avsQueue.remove(current);
             checkQueue();
+        }else{
+            //discard the current item and execute the next one
+            avsQueue.remove(current);
+            checkQueue();
         }
     }
 
     protected abstract void startListening();
-
+    //functions unused
+    /*
     private void adjustVolume(long adjust) {
         setVolume(adjust, true);
     }
@@ -449,7 +462,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
         am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) vol, AudioManager.FLAG_VIBRATE);
 
-        alexaManager.sendVolumeChangedEvent(volume, vol == 0, requestCallback);
+        alexaManager.sendVolumeChangedEvent(vol, vol == 0, requestCallback);
 
         Log.i(TAG, "Volume set to : " + vol + "/" + max + " (" + volume + ")");
 
@@ -479,7 +492,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 Toast.makeText(BaseActivity.this, "Volume " + (isMute ? "muted" : "unmuted"), Toast.LENGTH_SHORT).show();
             }
         });
-    }
+    }*/
 
     /**
      * Force the device to think that a hardware button has been pressed, this is used for Play/Pause/Previous/Next Media commands
