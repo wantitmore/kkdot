@@ -108,7 +108,24 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
                 }
             }
         }
-        saveData();
+        //handle snooze alert
+        List<AlertBean> alertBeans = DataSupport.where("token = ?", mToken).find(AlertBean.class);
+        if (alertBeans != null && alertBeans.size() > 0) {
+            AlertBean alertBean = alertBeans.get(0);
+            if (alertBean.isActive()) {
+                alertBean.setScheduledTime(mScheduledTime);
+                alertBean.setActive(false);
+                alertBean.save();
+                mId = alertBean.getId();
+                Log.d(TAG, "getAttrs: -------------mId is " + mId);
+                Intent intent = new Intent(mContext, AlertHandleService.class);
+                intent.putExtra("active", true);
+                mContext.startService(intent);
+
+            }
+        }else {
+            saveData();
+        }
     }
 
     private void saveData() {
@@ -138,8 +155,8 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
             long alertTime = TimeUtil.getAlertTime(mScheduledTime);
             Log.d(TAG, "setAlertTask: scheduleTime is -->" + mScheduledTime + ",now is " + System.currentTimeMillis());
             Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(alertTime/*System.currentTimeMillis()*/);
-//            calendar.add(Calendar.SECOND, 5);
+            calendar.setTimeInMillis(/*alertTime*/System.currentTimeMillis());
+            calendar.add(Calendar.SECOND, 15);
 
             AlarmManager am = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);

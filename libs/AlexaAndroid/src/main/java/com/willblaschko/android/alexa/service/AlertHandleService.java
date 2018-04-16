@@ -66,14 +66,16 @@ public class AlertHandleService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        boolean active = intent.getBooleanExtra("active", false);
-        if (active) {
-            stopPlayer();
-        } else {
-            getData(intent);
-            mStartAlertTime = System.currentTimeMillis();
-            isStartEvent = true;
-            playAlert(0);
+        if (intent != null) {
+            boolean active = intent.getBooleanExtra("active", false);
+            if (active) {
+                stopPlayer();
+            } else {
+                getData(intent);
+                mStartAlertTime = System.currentTimeMillis();
+                isStartEvent = true;
+                playAlert(0);
+            }
         }
         return START_STICKY;
     }
@@ -107,6 +109,7 @@ public class AlertHandleService extends Service {
         if (mId <= 0) {
             return;
         }
+        mRealLoopCount = 1;
         AlertBean alertBean = DataSupport.find(AlertBean.class, mId);
         mToken = alertBean.getToken();
         mType = alertBean.getType();
@@ -271,6 +274,7 @@ public class AlertHandleService extends Service {
         if (mPlayer != null) {
             Log.d(TAG, "stopPlayer: for test");
             mPlayer.stop();
+            mPlayer.release();
             mPlayer = null;
             AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(mToken), null);
         }

@@ -479,14 +479,6 @@ public class Event {
                         .getEvent();
                 context.add(event);
 
-                Builder alertBuilder = new Builder();
-                Event alertContextEvent = alertBuilder
-                        .setHeaderNamespace("Alerts")
-                        .setHeaderName("AlertsState")
-                 .setPayloadAllAlerts(AlertUtil.getAllAlerts())
-                 .setPayloadActiveAlerts(AlertUtil.getActiveAlerts())
-                        .getEvent();
-                context.add(alertContextEvent);
             }/*else{
                 event = speechSynthesizerPlaybackStateBuilder.setHeaderNamespace("SpeechSynthesizer")
                         .setHeaderName("SpeechState")
@@ -506,6 +498,15 @@ public class Event {
                     .setPayloadMuted(sysHandle.isMute())
                     .getEvent();
             context.add(event);
+
+            Builder alertBuilder = new Builder();
+            Event alertContextEvent = alertBuilder
+                    .setHeaderNamespace("Alerts")
+                    .setHeaderName("AlertsState")
+                    .setPayloadAllAlerts(AlertUtil.getAllAlerts())
+                    .setPayloadActiveAlerts(AlertUtil.getActiveAlerts())
+                    .getEvent();
+            context.add(alertContextEvent);
         }
         return context;
     }
