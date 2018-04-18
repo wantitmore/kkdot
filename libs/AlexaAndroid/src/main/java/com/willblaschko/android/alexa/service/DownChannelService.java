@@ -117,7 +117,7 @@ public class DownChannelService extends Service {
                                     e.printStackTrace();
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Bad line");
+                                Log.e(TAG, "Bad line error is " + e.getMessage());
                             }
                         }
 

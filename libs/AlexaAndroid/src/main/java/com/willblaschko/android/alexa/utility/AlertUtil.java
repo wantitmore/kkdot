@@ -1,5 +1,8 @@
 package com.willblaschko.android.alexa.utility;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.willblaschko.android.alexa.beans.AlertBean;
@@ -7,6 +10,7 @@ import com.willblaschko.android.alexa.beans.AlertContextBean;
 
 import org.litepal.crud.DataSupport;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +49,33 @@ public class AlertUtil {
             }
         }
         return activeAlerts;
+    }
+
+    public static Boolean isNetworkConnected(Context context) {
+        ConnectivityManager manager = (ConnectivityManager) context
+                .getApplicationContext().getSystemService(
+                        Context.CONNECTIVITY_SERVICE);
+
+        if (manager == null) {
+            return false;
+        }
+
+        NetworkInfo networkinfo = manager.getActiveNetworkInfo();
+
+        return  !(networkinfo == null || !networkinfo.isAvailable());
+    }
+
+    public static void deleteFile(File file) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            for (int i = 0; i < files.length; i++) {
+                File f = files[i];
+                deleteFile(f);
+            }
+            file.delete();
+        } else if (file.exists()) {
+            file.delete();
+        }
     }
 
 }

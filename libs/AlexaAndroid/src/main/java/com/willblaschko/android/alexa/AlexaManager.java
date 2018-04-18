@@ -643,7 +643,7 @@ public class AlexaManager {
                 if(response.code() == HttpURLConnection.HTTP_NO_CONTENT){
                     Log.w(TAG, "Received a 204 response code from Amazon, is this expected?");
                 }
-
+                Log.d(TAG, "success: respon is -->" + response);
                 final AvsResponse items = response.code() == HttpURLConnection.HTTP_NO_CONTENT ? new AvsResponse() :
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
                 response.body().close();

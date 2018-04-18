@@ -7,16 +7,12 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.provider.AlarmClock;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
-import com.willblaschko.android.alexa.callbacks.ImplAsyncCallback;
 import com.willblaschko.android.alexa.data.Directive;
 import com.willblaschko.android.alexa.data.Event;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
@@ -40,7 +36,6 @@ import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,12 +96,13 @@ public class AndroidSystemHandler {
                 Log.i(TAG, "Media previous command issued");
             }else if (current instanceof AvsSetAlertItem){
                 Log.d(TAG, "handleItems: current item is " + ((AvsSetAlertItem) current).getType() + "--");
-                if(((AvsSetAlertItem) current).isAlarm()){
+                setAlarm((AvsSetAlertItem) current);
+                /*if(((AvsSetAlertItem) current).isAlarm()){
                     Log.d(TAG, "handleItems: -------------->");
                     setAlarm((AvsSetAlertItem) current);
                 }else if(((AvsSetAlertItem) current).isTimer()){
                     setTimer((AvsSetAlertItem) current);
-                }
+                }*/
             }else if (current instanceof AvsDeleteAlertItem){
                 Log.d(TAG, "handleItems: ---deleteAlert");
                 deleteAlert(current);
@@ -122,12 +118,7 @@ public class AndroidSystemHandler {
         if (alertBeans != null && alertBeans.size() > 0) {
             int id = alertBeans.get(0).getId();
             Log.d(TAG, "deleteAlert: id is " + id);
-            /*boolean active = alertBeans.get(0).isActive();
-            if (active) {
-                context.bindService()
-            }*/
             Intent intent = new Intent(context, AlertHandlerReceiver.class);
-
             intent.putExtra("tag", "deleteAlert");
             intent.putExtra("id", id);
             intent.putExtra("token", token);
@@ -165,22 +156,9 @@ public class AndroidSystemHandler {
         return mute;
     }
 
-/*    private ServiceConnection conn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-            AlertService.AlertBinder alertService = (AlertService.AlertBinder) service;
-            alertService.stopPlayer();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
-    };*/
 
     private void setTimer(final AvsSetAlertItem item){
-        try {
+        /*try {
             int time = (int) ((item.getScheduledTimeMillis() - System.currentTimeMillis()) / 1000);
             Log.d(TAG, "setTimer: time is " + time);
             Intent alarmas = new Intent(AlarmClock.ACTION_SET_TIMER);
@@ -208,31 +186,37 @@ public class AndroidSystemHandler {
             }, time * 1000);
         } catch (ParseException e) {
             e.printStackTrace();
-        }
+        }*/
+
 
     }
     private void setAlarm(AvsSetAlertItem item){
         Log.d(TAG, "setAlarm: ==========");
 
-        Intent intent = new Intent(context, AlertHandlerReceiver.class);
+        try {
+            Intent intent = new Intent(context, AlertHandlerReceiver.class);
 
 //        intent.put("alertItem", item);
-        Bundle bundle = new Bundle();
-        bundle.putString("type", item.getType());
-        bundle.putString("scheduledTime", item.getScheduledTime());
-        bundle.putSerializable("assets", (Serializable) item.getAssets());
-        bundle.putStringArrayList("assetPlayOrder", (ArrayList<String>) item.getAssetPlayOrder());
-        bundle.putLong("loopPauseInMilliSeconds", item.getLoopPauseInMilliSeconds());
-        bundle.putLong("loopCount", item.getLoopCount());
-        bundle.putString("backgroundAlertAsset", item.getBackgroundAlertAsset());
-        bundle.putString("token", item.getToken());
-        intent.putExtras(bundle);
+            Bundle bundle = new Bundle();
+            bundle.putString("type", item.getType());
+            bundle.putString("scheduledTime", item.getScheduledTime());
+            bundle.putSerializable("assets", (Serializable) item.getAssets());
+            bundle.putStringArrayList("assetPlayOrder", (ArrayList<String>) item.getAssetPlayOrder());
+            bundle.putLong("loopPauseInMilliSeconds", item.getLoopPauseInMilliSeconds());
+            bundle.putLong("loopCount", item.getLoopCount());
+            bundle.putString("backgroundAlertAsset", item.getBackgroundAlertAsset());
+            bundle.putString("token", item.getToken());
+            intent.putExtras(bundle);
 
-        context.sendBroadcast(intent);
+            context.sendBroadcast(intent);
 //        context.startService(intent);
 //        context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
-        AlexaManager.getInstance(context)
-                .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
+            AlexaManager.getInstance(context)
+                    .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
+        } catch (Exception e) {
+            AlexaManager.getInstance(context).sendEvent(Event.getSetAlertFailedEvent(item.getToken()), null);
+            e.printStackTrace();
+        }
     }
 
 

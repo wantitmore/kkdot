@@ -2,6 +2,7 @@ package com.willblaschko.android.alexa.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -16,7 +17,9 @@ import com.liulishuo.filedownloader.FileDownloadListener;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexa.beans.UnSendBean;
 import com.willblaschko.android.alexa.data.Event;
+import com.willblaschko.android.alexa.utility.AlertUtil;
 
 import org.litepal.crud.DataSupport;
 
@@ -28,16 +31,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AlertHandleService extends Service {
+public class AlertHandlerService extends Service {
 
-    private static final String TAG = "AlertHandleService";
+    private static final String TAG = "AlertHandlerService";
     private static final long SECOND_INTERVAL = 1000;
     private static final long LASTING_RING_TIME = 60 * 60 * 1000;
+    private static final int START_POSITION = 0;
 
     private String mToken;
     private String mType;
     private String mScheduledTime;
-    private List<AlertBean.AssetsBean> mAssets;
     private List<String> mAssetPlayOrder;
     private String mBackgroundAlertAsset;
     private long mLoopCount;
@@ -54,9 +57,10 @@ public class AlertHandleService extends Service {
     private List<String> mAssetIds;
     private boolean isStartEvent;
     private int mId;
-    public AlertHandleService.AlertBinder mBinder = new AlertHandleService.AlertBinder();
+    public AlertHandlerService.AlertBinder mBinder = new AlertHandlerService.AlertBinder();
+    private CountDownTimer mCountDownTimer;
 
-    public AlertHandleService() {
+    public AlertHandlerService() {
     }
 
     @Override
@@ -74,7 +78,7 @@ public class AlertHandleService extends Service {
                 getData(intent);
                 mStartAlertTime = System.currentTimeMillis();
                 isStartEvent = true;
-                playAlert(0);
+                playAlert(START_POSITION);
             }
         }
         return START_STICKY;
@@ -82,20 +86,16 @@ public class AlertHandleService extends Service {
 
     public class AlertBinder extends Binder {
 
-        private final AlertHandleService service;
+        private final AlertHandlerService service;
 
         private AlertBinder() {
-            service = AlertHandleService.this;
+            service = AlertHandlerService.this;
         }
 
         public void setType(String type) {
             Log.d("AlertService", "setType: " + type);
         }
 
-        public void stopPlayer() {
-            Log.d(TAG, "stopPlayer: -----");
-            service.stopPlayer();
-        }
     }
 
     @Override
@@ -114,7 +114,6 @@ public class AlertHandleService extends Service {
         mToken = alertBean.getToken();
         mType = alertBean.getType();
         mScheduledTime = alertBean.getScheduledTime();
-//        mAssets = alertBean.getAssets();
         mAssetIds = alertBean.getAssetIds();
         mAssetUrls = alertBean.getAssetUrls();
         mAssetPlayOrder = alertBean.getAssetPlayOrder();
@@ -150,30 +149,52 @@ public class AlertHandleService extends Service {
     }
 
     private void playAlert(int position) {
-//        cancelTask();
-        String playId = mPlayIds.get(position);
-        String playUrl = mPlayMap.get(playId);
-        Log.d(TAG, "playId size is " + (mPlayIds != null ? mPlayIds.size() : "null"));
         if (mPlayer != null) {
             mPlayer.reset();
             mPlayer = null;
         }
-        try {
-            mPlayer = new MediaPlayer();
-            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            File file = new File(mCacheDir + playId + ".mp3");
-            Log.d(TAG, "playAlert: file path is " + file.getAbsolutePath());
-            if (file.exists()) {
-                Log.d(TAG, "playAlert: local--");
-                mPlayer.setDataSource(this, Uri.fromFile(file));
-            } else {
-                Log.d(TAG, "playAlert: url--");
-                downloadFile(playId, playUrl);
-                mPlayer.setDataSource(this, Uri.parse(playUrl));
+        mPlayer = new MediaPlayer();
+        mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        if (mPlayIds.size() <= 0) {
+            AssetFileDescriptor fd;
+            try {
+                if ("TIMER".equals(mType)) {
+                    fd = getAssets().openFd("med_system_alerts_melodic_02" + ".mp3");
+                    mPlayer.setDataSource(fd.getFileDescriptor());
+
+                } else if ("ALARM".equals(mType)) {
+                    fd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
+                    mPlayer.setDataSource(fd.getFileDescriptor());
+                }
+            } catch (IOException e) {
+                Log.d(TAG, "playAlert: error is " + e.getMessage());
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            Log.e(TAG, "playAlert: exception is " + e.getMessage());
-            e.printStackTrace();
+        } else {
+            String playId = mPlayIds.get(position);
+            String playUrl = mPlayMap.get(playId);
+            try {
+
+                File file = new File(mCacheDir + playId + ".mp3");
+                Log.d(TAG, "playAlert: file path is " + file.getAbsolutePath());
+                if (file.exists()) {
+                    Log.d(TAG, "playAlert: local--");
+                    mPlayer.setDataSource(this, Uri.fromFile(file));
+                } else {
+                    Log.d(TAG, "playAlert: url--");
+                    if (AlertUtil.isNetworkConnected(this)) {
+                        downloadFile(playId, playUrl);
+                        mPlayer.setDataSource(this, Uri.parse(playUrl));
+                    } else {
+                        Log.d(TAG, "playAlert: asset---");
+                        AssetFileDescriptor fd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
+                        mPlayer.setDataSource(fd.getFileDescriptor());
+                    }
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "playAlert: exception is " + e.getMessage());
+                e.printStackTrace();
+            }
         }
         mPlayer.prepareAsync();
         mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -182,7 +203,14 @@ public class AlertHandleService extends Service {
                 Log.d(TAG, "onPrepared: play start");
                 mPlayer.start();
                 if (isStartEvent) {
-                    AlexaManager.getInstance(AlertHandleService.this).sendEvent(Event.getAlertStartedEvent(mToken), null);
+                    if (AlertUtil.isNetworkConnected(AlertHandlerService.this)) {
+                        AlexaManager.getInstance(AlertHandlerService.this).sendEvent(Event.getAlertStartedEvent(mToken), null);
+                    } else {
+                        UnSendBean unSendBean = new UnSendBean();
+                        unSendBean.setToken(mToken);
+                        unSendBean.setType("AlertStarted");
+                        unSendBean.save();
+                    }
                 }
             }
         });
@@ -198,12 +226,11 @@ public class AlertHandleService extends Service {
                         Log.d(TAG, "onCompletion: position is " + mPlayPosition);
                         playAlert(mPlayPosition);
                     } else {
-//                        Log.d(TAG, "onCompletion: ===============");
-                        new CountDownTimer(mLoopPauseInMilliSeconds, SECOND_INTERVAL) {
+                        // TODO Auto-generated method stub
+                        mCountDownTimer = new CountDownTimer(mLoopPauseInMilliSeconds, SECOND_INTERVAL) {
                             @Override
                             public void onTick(long millisUntilFinished) {
                                 // TODO Auto-generated method stub
-//                                Log.d(TAG, "onTick: --------------------------");
                             }
 
                             @Override
@@ -218,7 +245,6 @@ public class AlertHandleService extends Service {
                                     Log.d(TAG, "onFinish: stop to play");
                                     stopPlayer();
                                     //delete alarming alert from db after finishing sounding
-                                    //TODO:
                                     DataSupport.delete(AlertBean.class, mId);
                                 }
                             }
@@ -276,7 +302,26 @@ public class AlertHandleService extends Service {
             mPlayer.stop();
             mPlayer.release();
             mPlayer = null;
-            AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(mToken), null);
         }
+        if (mCountDownTimer != null) {
+            mCountDownTimer.cancel();
+        }
+        if (AlertUtil.isNetworkConnected(this)) {
+            AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(mToken), null);
+        } else {
+            List<UnSendBean> unSendBeans = DataSupport.where("token = ?", mToken).find(UnSendBean.class);
+            if (unSendBeans != null && unSendBeans.size() > 0) {
+                UnSendBean unSendBean = unSendBeans.get(0);
+                unSendBean.setType("AlertStopped");
+                unSendBean.save();
+            } else {
+                UnSendBean unSendBean = new UnSendBean();
+                unSendBean.setType("AlertStopped");
+                unSendBean.setToken(mToken);
+                unSendBean.save();
+            }
+
+        }
+        AlertUtil.deleteFile(new File(mCacheDir));
     }
 }

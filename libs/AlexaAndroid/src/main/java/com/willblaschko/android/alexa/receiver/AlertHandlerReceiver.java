@@ -3,19 +3,15 @@ package com.willblaschko.android.alexa.receiver;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.IBinder;
 import android.util.Log;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
 import com.willblaschko.android.alexa.data.Event;
-import com.willblaschko.android.alexa.service.AlertHandleService;
+import com.willblaschko.android.alexa.service.AlertHandlerService;
 import com.willblaschko.android.alexa.utility.TimeUtil;
 
 import org.litepal.LitePal;
@@ -32,10 +28,7 @@ import java.util.Set;
 public class AlertHandlerReceiver extends BroadcastReceiver {
 
     private static final String TAG = "AlertHandlerReceiver";
-    private static final long SECOND_INTERVAL = 1000;
-    private static final long LASTING_RING_TIME = 60 * 60 * 1000;
 
-    private String mCacheDir = Environment.getExternalStorageDirectory() + "/AlexaAudioCache/";
     private List<String> mPlayIds;
     private Map<String, String> mPlayMap;
     private Context mContext;
@@ -118,7 +111,7 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
                 alertBean.save();
                 mId = alertBean.getId();
                 Log.d(TAG, "getAttrs: -------------mId is " + mId);
-                Intent intent = new Intent(mContext, AlertHandleService.class);
+                Intent intent = new Intent(mContext, AlertHandlerService.class);
                 intent.putExtra("active", true);
                 mContext.startService(intent);
 
@@ -148,7 +141,7 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
     private void setAlertTask() {
         Log.d(TAG, "setAlertTask: -------------" + PendingIntent.FLAG_CANCEL_CURRENT + "-" + PendingIntent.FLAG_UPDATE_CURRENT);
         try {
-            Intent intent = new Intent(mContext, AlertHandleService.class);
+            Intent intent = new Intent(mContext, AlertHandlerService.class);
             intent.putExtra("id", mId);
             PendingIntent sender = PendingIntent.getService(
                     mContext, mId, intent, 0);
@@ -169,7 +162,7 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
     private void cancelAlertTask(int deleteId, String token) {
         Log.d(TAG, "cancelAlertTask: id is" + deleteId);
         try {
-            Intent intent = new Intent(mContext, AlertHandleService.class);
+            Intent intent = new Intent(mContext, AlertHandlerService.class);
             PendingIntent pi = PendingIntent.getService(mContext, deleteId,
                     intent, 0);
             AlarmManager am = (AlarmManager)mContext.getSystemService(Context.ALARM_SERVICE);
@@ -192,19 +185,6 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
         }
     }
 
-    private ServiceConnection conn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-            AlertHandleService.AlertBinder alertService = (AlertHandleService.AlertBinder) service;
-            alertService.stopPlayer();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
-    };
 
 
 }

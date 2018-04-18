@@ -9,7 +9,9 @@ import android.util.Log;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexa.beans.UnSendBean;
 import com.willblaschko.android.alexa.data.Event;
+import com.willblaschko.android.alexa.utility.AlertUtil;
 import com.willblaschko.android.alexa.utility.TimeUtil;
 
 import org.litepal.crud.DataSupport;
@@ -49,9 +51,23 @@ public class ResetAlertService extends IntentService {
                 if (elapsedTime > ELAPSE_TIME) {
                     //discard alert
                     DataSupport.delete(AlertBean.class, id);
-                    AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(token), null);
+                    if (AlertUtil.isNetworkConnected(this)) {
+                        AlexaManager.getInstance(this).sendEvent(Event.getAlertStoppedEvent(token), null);
+                    } else {
+                        List<UnSendBean> unSendBeans = DataSupport.where("token = ?", token).find(UnSendBean.class);
+                        if (unSendBeans != null && unSendBeans.size() > 0) {
+                            UnSendBean unSendBean = unSendBeans.get(0);
+                            unSendBean.setType("AlertStopped");
+                            unSendBean.save();
+                        } else {
+                            UnSendBean unSendBean = new UnSendBean();
+                            unSendBean.setType("AlertStopped");
+                            unSendBean.setToken(token);
+                            unSendBean.save();
+                        }
+                    }
                 } else if (elapsedTime <= 0) {
-                    Intent alertIntent = new Intent(this, AlertHandleService.class);
+                    Intent alertIntent = new Intent(this, AlertHandlerService.class);
                     alertIntent.putExtra("id", id);
                     PendingIntent sender = PendingIntent.getService(
                             this, id, alertIntent, 0);

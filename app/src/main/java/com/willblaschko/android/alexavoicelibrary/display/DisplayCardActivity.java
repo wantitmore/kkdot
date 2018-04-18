@@ -112,7 +112,7 @@ public class DisplayCardActivity extends BaseActivity {
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
-//        startListening();
+        startListening();
     }
 
     public void moveVoiceViewToCenter() {
@@ -185,13 +185,13 @@ public class DisplayCardActivity extends BaseActivity {
         public void writeTo(BufferedSink sink) throws IOException {
 //            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa");
             boolean changeState = true;
-            Log.i(TAG,"will enter writeTo while loop");
+//            Log.i(TAG,"will enter writeTo while loop");
             while (recorder != null && !recorder.isPausing()) {
                 try {
-                    //Log.d(TAG, "writeTo: record is null? " + recorder);
+//                    Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-                        //Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
+                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
                         CircleVoiceStateView.State currentState = mVoiceStateView.getCurrentState();
 
                         if (changeState && rmsdb != 0) {
@@ -218,7 +218,7 @@ public class DisplayCardActivity extends BaseActivity {
                     e.printStackTrace();
                 }
             }
-            Log.i(TAG,"exit writeTo while loop");
+//            Log.i(TAG,"exit writeTo while loop");
             mVoiceStateView.post(new Runnable() {
                 @Override
                 public void run() {
@@ -307,7 +307,7 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
             recorder.stop();
-//            recorder.release();
+            recorder.release();
             recorder = null;
         }
     }
