@@ -162,11 +162,6 @@ public class DisplayCardActivity extends BaseActivity {
             args.putParcelable("args", (Parcelable) renderObj);
             mShowingFragment.setArguments(args);
         }
-        if (renderObj instanceof PlayerInfoBean) {
-            moveVoiceViewToCenter();
-        } else if (!(renderObj instanceof String)) {
-            resetVoiceViewPosition();
-        }
         FragmentTransaction transaction = mFragmentManager.beginTransaction();
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 //        transaction.setCustomAnimations()
@@ -209,7 +204,7 @@ public class DisplayCardActivity extends BaseActivity {
                         sink.write(recorder.consumeRecording());
                     }
                 } catch (Exception e) {
-                    Log.d(TAG, "writeTo: error is " + e.getMessage());
+                    Log.e(TAG, "writeTo: error is " + e.getMessage());
                     e.printStackTrace();
                 }
                 try {
@@ -253,6 +248,7 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
         if (recorder == null) {
+            stopCurrentPlayingItem();
             mVoiceStateView.setCurrentState(CircleVoiceStateView.State.LISTENING);
             Log.d(TAG, "startListening: recorder = null");
             recorder = new RawAudioRecorder(AUDIO_RATE);

@@ -97,12 +97,6 @@ public class AndroidSystemHandler {
             }else if (current instanceof AvsSetAlertItem){
                 Log.d(TAG, "handleItems: current item is " + ((AvsSetAlertItem) current).getType() + "--");
                 setAlarm((AvsSetAlertItem) current);
-                /*if(((AvsSetAlertItem) current).isAlarm()){
-                    Log.d(TAG, "handleItems: -------------->");
-                    setAlarm((AvsSetAlertItem) current);
-                }else if(((AvsSetAlertItem) current).isTimer()){
-                    setTimer((AvsSetAlertItem) current);
-                }*/
             }else if (current instanceof AvsDeleteAlertItem){
                 Log.d(TAG, "handleItems: ---deleteAlert");
                 deleteAlert(current);

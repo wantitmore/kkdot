@@ -63,6 +63,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
     private long startTime = 0;
 
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -303,20 +304,13 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     avsQueue.clear();
                     checkAfter = false;
                     response.remove(i);
-                }else if(response.get(i) instanceof AvsStopItem && audioPlayer.isPlaying()){
+                }else if(response.get(i) instanceof AvsStopItem){
                     addTotail = false;
                     avsQueue.remove(audioPlayer.getCurrentItem());
-                }else if(response.get(i) instanceof  AvsSpeakItem && audioPlayer.isPlaying())
-                {
-                    if(audioPlayer.getCurrentItem() instanceof AvsSpeakItem)
-                    {
-                        audioPlayer.stop();
-                        avsQueue.remove(audioPlayer.getCurrentItem());
-                    }
-                    else if(audioPlayer.getCurrentItem() instanceof AvsPlayRemoteItem){
-                        ((AvsPlayRemoteItem) audioPlayer.getCurrentItem()).setStartoffset(audioPlayer.getCurrentPosition());
-                        audioPlayer.stop();
+                }else if(response.get(i) instanceof  AvsSpeakItem) {
                         addTotail = false;
+                        if(audioPlayer.isPlaying()) {
+                            audioPlayer.stop();
                     }
                 }
             }
@@ -382,45 +376,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             audioPlayer.stop();
             avsQueue.remove(current);
         } else if (current instanceof AvsExpectSpeechItem) {
-            //listen for user input
-            audioPlayer.stop();
-            avsQueue.clear();
             startListening();
+            avsQueue.remove(current);
         }
-        //these items have been executed in AndroidSystemHandler.handleItems() and didn't need be executed one more
-        /* else if (current instanceof AvsSetVolumeItem) {
-            //set our volume
-            setVolume(((AvsSetVolumeItem) current).getVolume());
-            avsQueue.remove(current);
-        } else if (current instanceof AvsAdjustVolumeItem) {
-            //adjust the volume
-            adjustVolume(((AvsAdjustVolumeItem) current).getAdjustment());
-            avsQueue.remove(current);
-        } else if (current instanceof AvsSetMuteItem) {
-            //mute/unmute the device
-            setMute(((AvsSetMuteItem) current).isMute());
-            avsQueue.remove(current);
-        } else if (current instanceof AvsMediaPlayCommandItem) {
-            //fake a hardware "play" press
-            sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_PLAY);
-            Log.i(TAG, "Media play command issued");
-            avsQueue.remove(current);
-        } else if (current instanceof AvsMediaPauseCommandItem) {
-            //fake a hardware "pause" press
-            sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_PAUSE);
-            Log.i(TAG, "Media pause command issued");
-            avsQueue.remove(current);
-        } else if (current instanceof AvsMediaNextCommandItem) {
-            //fake a hardware "next" press
-            sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_NEXT);
-            Log.i(TAG, "Media next command issued");
-            avsQueue.remove(current);
-        } else if (current instanceof AvsMediaPreviousCommandItem) {
-            //fake a hardware "previous" press
-            sendMediaButton(this, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            Log.i(TAG, "Media previous command issued");
-            avsQueue.remove(current);
-        } */
         else if (current instanceof AvsResponseException) {
             runOnUiThread(new Runnable() {
                 @Override
@@ -439,6 +397,23 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             //discard the current item and execute the next one
             avsQueue.remove(current);
             checkQueue();
+        }
+    }
+    protected  void stopCurrentPlayingItem(){
+        if (avsQueue.size() == 0|| audioPlayer == null) {
+            return;
+        }
+        AvsItem current = avsQueue.get(0);
+        if(audioPlayer.isPlaying()){
+            if(current instanceof AvsSpeakItem){
+                avsQueue.remove(current);
+            }
+
+            if(audioPlayer.getCurrentItem() instanceof AvsPlayRemoteItem){
+                ((AvsPlayRemoteItem) audioPlayer.getCurrentItem()).setStartoffset(audioPlayer.getCurrentPosition());
+            }
+
+            audioPlayer.stop(false);
         }
     }
 
@@ -548,4 +523,5 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     protected abstract void stateNone();
 
     protected abstract void stateError();
+
 }

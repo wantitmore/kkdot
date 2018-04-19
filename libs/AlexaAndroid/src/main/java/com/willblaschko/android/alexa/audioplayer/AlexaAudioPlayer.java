@@ -14,6 +14,7 @@ import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayContentItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 
+import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -236,7 +237,7 @@ public class AlexaAudioPlayer {
                     + ",mlastSpeakItem:" + mlastSpeakItem.getPlayerAcivity());
             //write out our raw audio data to a file
             File path = new File(mContext.getCacheDir(), System.currentTimeMillis() + ".mp3");
-            FileOutputStream fos = null;
+            FileOutputStream fos;
             try {
                 fos = new FileOutputStream(path);
                 fos.write(playItem.getAudio());
@@ -248,7 +249,8 @@ public class AlexaAudioPlayer {
                 //bubble up our error
                 bubbleUpError(e);
             }
-
+            //transite alert to bg
+            EventBus.getDefault().post("SpeakStart");
         }
         //prepare our player, this will start once prepared because of mPreparedListener
         try {
@@ -283,12 +285,20 @@ public class AlexaAudioPlayer {
     /**
      * A helper function to stop the MediaPlayer
      */
-    public void stop() {
-        if(mItem instanceof AvsPlayRemoteItem){
-            ((AvsPlayRemoteItem) mItem).setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_STOPPED);
-        }
-        else if(mItem instanceof AvsSpeakItem){
-            ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
+
+    public void stop(){
+        stop(true);
+    }
+
+    public void stop(Boolean recordstate) {
+        if(recordstate)
+        {
+            if(mItem instanceof AvsPlayRemoteItem){
+                ((AvsPlayRemoteItem) mItem).setPlayerActivity(AvsPlayRemoteItem.PLAYER_ACTIVITY_STOPPED);
+            }
+            else if(mItem instanceof AvsSpeakItem){
+                ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
+            }
         }
         getMediaPlayer().stop();
     }
@@ -371,6 +381,8 @@ public class AlexaAudioPlayer {
                 ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
                 Log.i(TAG, "onCompletion AvsSpeakItem playeractivity:" + ((AvsSpeakItem) mItem).getPlayerAcivity()
                         + ",mlastSpeakItem:" + mlastSpeakItem.getPlayerAcivity());
+                //transite alert to foreground
+                EventBus.getDefault().post("SpeakEnd");
             }
 
             for (Callback callback : mCallbacks) {

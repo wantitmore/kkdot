@@ -10,6 +10,7 @@ import android.os.Binder;
 import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.liulishuo.filedownloader.BaseDownloadTask;
@@ -21,9 +22,13 @@ import com.willblaschko.android.alexa.beans.UnSendBean;
 import com.willblaschko.android.alexa.data.Event;
 import com.willblaschko.android.alexa.utility.AlertUtil;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.crud.DataSupport;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,6 +64,10 @@ public class AlertHandlerService extends Service {
     private int mId;
     public AlertHandlerService.AlertBinder mBinder = new AlertHandlerService.AlertBinder();
     private CountDownTimer mCountDownTimer;
+    private boolean isForeground = true;
+    private Set<Map.Entry<String, String>> mEntries;
+    private String mBackGroundUrl;
+    private boolean isPlayingAlert;
 
     public AlertHandlerService() {
     }
@@ -66,6 +75,7 @@ public class AlertHandlerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -78,10 +88,16 @@ public class AlertHandlerService extends Service {
                 getData(intent);
                 mStartAlertTime = System.currentTimeMillis();
                 isStartEvent = true;
-                playAlert(START_POSITION);
+                playAlert(isForeground, START_POSITION);
             }
         }
         return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 
     public class AlertBinder extends Binder {
@@ -102,6 +118,24 @@ public class AlertHandlerService extends Service {
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
         return mBinder;
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handleEvent(String speakStatus) {
+        if (TextUtils.equals("SpeakStart", speakStatus)) {
+            //turn to bg Asset
+            Log.d(TAG, "handleEvent: SpeakStart-----------");
+            isForeground = false;
+            if (mPlayer != null && isPlayingAlert) {
+                playAlert(false, 0);
+            }
+        } else if (TextUtils.equals("SpeakEnd", speakStatus)) {
+            Log.d(TAG, "handleEvent: SpeakEnd-----------");
+            isForeground = true;
+            if (mPlayer != null && isPlayingAlert) {
+                playAlert(true, 0);
+            }
+        }
     }
 
     private void getData(Intent intent) {
@@ -132,69 +166,38 @@ public class AlertHandlerService extends Service {
         }
         //  set an custome alarm
         mPlayIds = new ArrayList<>();
-        Set<Map.Entry<String, String>> entries = mPlayMap.entrySet();
-        Log.d(TAG, "getData: entris " + entries.size());
+        mEntries = mPlayMap.entrySet();
+        Log.d(TAG, "getData: entris " + mEntries.size());
         if (mAssetPlayOrder != null) {
             for (String assetPlay : mAssetPlayOrder) {
-                for (Map.Entry<String, String> playBean: entries) {
+                for (Map.Entry<String, String> playBean: mEntries) {
                     String playId = playBean.getKey();
+                    if (TextUtils.equals(mBackgroundAlertAsset, playId)) {
+                        mBackGroundUrl = playBean.getValue();
+                    }
                     Log.d(TAG, "getData: playid is " + playId);
                     if (assetPlay.equals(playId)) {
                         mPlayIds.add(playId);
                         Log.d(TAG, "getData: --------------------");
-                    }
+                    } 
                 }
             }
         }
     }
 
-    private void playAlert(int position) {
+    private void playAlert(final boolean isForeground, int position) {
+        isPlayingAlert = true;
         if (mPlayer != null) {
             mPlayer.reset();
             mPlayer = null;
         }
         mPlayer = new MediaPlayer();
         mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        Log.d(TAG, "playAlert: isForeground is " + isForeground + " size is " + mPlayIds.size());
         if (mPlayIds.size() <= 0) {
-            AssetFileDescriptor fd;
-            try {
-                if ("TIMER".equals(mType)) {
-                    fd = getAssets().openFd("med_system_alerts_melodic_02" + ".mp3");
-                    mPlayer.setDataSource(fd.getFileDescriptor());
-
-                } else if ("ALARM".equals(mType)) {
-                    fd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
-                    mPlayer.setDataSource(fd.getFileDescriptor());
-                }
-            } catch (IOException e) {
-                Log.d(TAG, "playAlert: error is " + e.getMessage());
-                e.printStackTrace();
-            }
-        } else {
-            String playId = mPlayIds.get(position);
-            String playUrl = mPlayMap.get(playId);
-            try {
-
-                File file = new File(mCacheDir + playId + ".mp3");
-                Log.d(TAG, "playAlert: file path is " + file.getAbsolutePath());
-                if (file.exists()) {
-                    Log.d(TAG, "playAlert: local--");
-                    mPlayer.setDataSource(this, Uri.fromFile(file));
-                } else {
-                    Log.d(TAG, "playAlert: url--");
-                    if (AlertUtil.isNetworkConnected(this)) {
-                        downloadFile(playId, playUrl);
-                        mPlayer.setDataSource(this, Uri.parse(playUrl));
-                    } else {
-                        Log.d(TAG, "playAlert: asset---");
-                        AssetFileDescriptor fd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
-                        mPlayer.setDataSource(fd.getFileDescriptor());
-                    }
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "playAlert: exception is " + e.getMessage());
-                e.printStackTrace();
-            }
+            setDefaultAsset(isForeground);
+        } else if (mPlayIds.size() > 0){
+            setForegroundAlert(isForeground, position);
         }
         mPlayer.prepareAsync();
         mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -262,6 +265,83 @@ public class AlertHandlerService extends Service {
             }
         });
     }
+
+    private void playAlert(int mPlayPosition) {
+        playAlert(isForeground, mPlayPosition);
+    }
+
+    private void setDefaultAsset(boolean isForeground) {
+        AssetFileDescriptor afd;
+        try {
+            if ("TIMER".equals(mType)) {
+                Log.d(TAG, "setDefaultAsset: isForeground is " + isForeground);
+                if (isForeground) {
+                    Log.d(TAG, "setDefaultAsset: ==========");
+                    afd = getAssets().openFd("med_system_alerts_melodic_02" + ".mp3");
+                    FileDescriptor fd = afd.getFileDescriptor();
+                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
+
+                }else {
+                    afd = getAssets().openFd("med_system_alerts_melodic_02_short" + ".wav");
+                    FileDescriptor fd = afd.getFileDescriptor();
+                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
+
+                }
+
+            } else if ("ALARM".equals(mType)) {
+                if (isForeground) {
+                    Log.d(TAG, "setDefaultAsset: ==========");
+                    afd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
+                    FileDescriptor fd = afd.getFileDescriptor();
+                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
+
+                }else {
+                    afd = getAssets().openFd("med_system_alerts_melodic_01_short" + ".wav");
+                    FileDescriptor fd = afd.getFileDescriptor();
+                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
+
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "playAlert: error is " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void setForegroundAlert(boolean isForeground, int position) {
+        String playId;
+        String playUrl;
+        if (isForeground) {
+            playId = mPlayIds.get(position);
+            playUrl = mPlayMap.get(playId);
+        } else {
+            playId = mBackgroundAlertAsset;
+            playUrl = mBackGroundUrl;
+        }
+        try {
+
+            File file = new File(mCacheDir + playId + ".mp3");
+            Log.d(TAG, "playAlert: file path is " + file.getAbsolutePath());
+            if (file.exists()) {
+                Log.d(TAG, "playAlert: local--");
+                mPlayer.setDataSource(this, Uri.fromFile(file));
+            } else {
+                Log.d(TAG, "playAlert: url--");
+                if (AlertUtil.isNetworkConnected(this)) {
+                    mPlayer.setDataSource(this, Uri.parse(playUrl));
+                    downloadFile(playId, playUrl);
+//                    downloadFile(mBackgroundAlertAsset, mBackGroundUrl);
+                } else {
+                    Log.d(TAG, "playAlert: asset---");
+                    setDefaultAsset(isForeground);
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "playAlert: exception is " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private void downloadFile(String playId, String playUrl) {
         FileDownloader.getImpl().create(playUrl).setPath(mCacheDir + playId + ".mp3")
                 .setListener(new FileDownloadListener() {
@@ -287,7 +367,7 @@ public class AlertHandlerService extends Service {
 
                     @Override
                     protected void error(BaseDownloadTask task, Throwable e) {
-                        Log.d(TAG, "error: download fail- " + e.getMessage());
+                        Log.e(TAG, "error: download fail- " + e.getMessage());
                     }
 
                     @Override
@@ -297,6 +377,7 @@ public class AlertHandlerService extends Service {
                 }).start();
     }
     private void stopPlayer() {
+        isPlayingAlert = false;
         if (mPlayer != null) {
             Log.d(TAG, "stopPlayer: for test");
             mPlayer.stop();
