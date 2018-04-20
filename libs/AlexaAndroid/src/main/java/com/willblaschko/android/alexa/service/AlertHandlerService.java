@@ -271,36 +271,31 @@ public class AlertHandlerService extends Service {
     }
 
     private void setDefaultAsset(boolean isForeground) {
-        AssetFileDescriptor afd;
+        AssetFileDescriptor afd = null;
         try {
             if ("TIMER".equals(mType)) {
                 Log.d(TAG, "setDefaultAsset: isForeground is " + isForeground);
                 if (isForeground) {
-                    Log.d(TAG, "setDefaultAsset: ==========");
+                    Log.d(TAG, "setDefaultAsset:TIMER ==========");
                     afd = getAssets().openFd("med_system_alerts_melodic_02" + ".mp3");
-                    FileDescriptor fd = afd.getFileDescriptor();
-                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
-
                 }else {
                     afd = getAssets().openFd("med_system_alerts_melodic_02_short" + ".wav");
-                    FileDescriptor fd = afd.getFileDescriptor();
-                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
-
                 }
 
             } else if ("ALARM".equals(mType)) {
                 if (isForeground) {
-                    Log.d(TAG, "setDefaultAsset: ==========");
+                    Log.d(TAG, "setDefaultAsset:ALARM ==========");
                     afd = getAssets().openFd("med_system_alerts_melodic_01" + ".mp3");
-                    FileDescriptor fd = afd.getFileDescriptor();
-                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
-
                 }else {
                     afd = getAssets().openFd("med_system_alerts_melodic_01_short" + ".wav");
-                    FileDescriptor fd = afd.getFileDescriptor();
-                    mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
-
                 }
+            } else if ("REMINDER".equals(mType)) {
+                Log.d(TAG, "setDefaultAsset:REMINDER ==========");
+                afd = getAssets().openFd("med_alerts_notification_03" + ".mp3");
+            }
+            if (afd != null) {
+                FileDescriptor fd = afd.getFileDescriptor();
+                mPlayer.setDataSource(fd, afd.getStartOffset(), afd.getLength());
             }
         } catch (IOException e) {
             Log.e(TAG, "playAlert: error is " + e.getMessage());

@@ -34,8 +34,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import okhttp3.Call;
 import okhttp3.Response;
@@ -68,7 +66,6 @@ public class AlexaManager {
     private static Context mContext;
     private boolean mIsRecording = false;
     public static boolean getKKSkill = false;
-    ExecutorService mCachedThreadPool = Executors.newCachedThreadPool();
 
     private AlexaManager(Context context, String productId){
         FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
@@ -543,16 +540,7 @@ public class AlexaManager {
                                 protected void onPostExecute(AvsResponse avsResponse) {
                                     super.onPostExecute(avsResponse);
                                 }
-                            }./*executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)*/execute();
-                           /* mCachedThreadPool.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.i(TAG,  " event is " + event);
-                                    AlexaAudioPlayer player = AlexaAudioPlayer.getInstance(mContext);
-                                    new GenericSendEvent(player.getCurrentItem(), url, token, event, new AsyncEventHandler(AlexaManager.this, callback));
-
-                                }
-                            });*/
+                            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         }
 
                         @Override
@@ -655,7 +643,7 @@ public class AlexaManager {
                 if(response.code() == HttpURLConnection.HTTP_NO_CONTENT){
                     Log.w(TAG, "Received a 204 response code from Amazon, is this expected?");
                 }
-                Log.d(TAG, "success: respon is -->" + response);
+
                 final AvsResponse items = response.code() == HttpURLConnection.HTTP_NO_CONTENT ? new AvsResponse() :
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
                 response.body().close();

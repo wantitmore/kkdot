@@ -46,7 +46,6 @@ public class DisplayCardActivity extends BaseActivity {
 
     private final static String TAG = DisplayCardActivity.class.getSimpleName();
     private static final int AUDIO_RATE = 16000;
-    private final static int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private CircleVoiceStateView mVoiceStateView;
     private EditText search;
     private View button;
@@ -153,9 +152,8 @@ public class DisplayCardActivity extends BaseActivity {
             if (mShowingFragment instanceof PlayerInfoFragment) {
 
             }
-
             mShowingFragment = PlayerInfoFragment.newInstance();
-        } else {
+        } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
             mShowingFragment = EmptyFragment.newInstance();
         }
         if (renderObj instanceof Parcelable) {
@@ -166,11 +164,6 @@ public class DisplayCardActivity extends BaseActivity {
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 //        transaction.setCustomAnimations()
         transaction.setCustomAnimations(R.animator.enter, R.animator.out).addToBackStack(null);
-        /*if (renderObj instanceof PlayerInfoBean) {
-            moveVoiceViewToCenter();
-        } else if (!(renderObj instanceof String)) {
-            resetVoiceViewPosition();
-        }*/
         transaction.replace(R.id.main_display_content, mShowingFragment).commitAllowingStateLoss();
      }
 
@@ -186,7 +179,7 @@ public class DisplayCardActivity extends BaseActivity {
 //                    Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
+//                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
                         CircleVoiceStateView.State currentState = mVoiceStateView.getCurrentState();
 
                         if (changeState && rmsdb != 0) {
@@ -303,7 +296,10 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
             recorder.stop();
-            recorder.release();
+            Log.d(TAG, "stopListening: ---recorder is " + recorder);
+            if (recorder != null) {
+                recorder.release();
+            }
             recorder = null;
         }
     }
