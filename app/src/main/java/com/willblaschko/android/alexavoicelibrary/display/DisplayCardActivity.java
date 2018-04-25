@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 
@@ -124,7 +123,7 @@ public class DisplayCardActivity extends BaseActivity {
         alexaManager.sendTextRequest(text, getRequestCallback());
     }
 
-    @Override
+ /*   @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_UP && mShowingFragment instanceof PlayerInfoFragment) {
 
@@ -141,7 +140,7 @@ public class DisplayCardActivity extends BaseActivity {
             }
         }
         return super.dispatchKeyEvent(event);
-    }
+    }*/
 
     public interface OnPlayControlListener {
         void onPlayControl();

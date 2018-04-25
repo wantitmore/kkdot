@@ -13,6 +13,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
@@ -31,7 +32,6 @@ public class PlayerInfoFragment extends Fragment implements MusicProgressCallBac
     private static final String TAG = PlayerInfoFragment.class.getSimpleName();
     private DisplayCardActivity mActivity;
     private int mDuration;
-    private boolean isPlaying = true;
     private ProgressBar mProgressBar;
     private TextView mDurationView;
     private TextView mCurrentTimeView;
@@ -199,10 +199,16 @@ public class PlayerInfoFragment extends Fragment implements MusicProgressCallBac
                     lp.leftMargin = 30;
                     lp.rightMargin = 30;
                     iv.setTag(name);
-                    iv.setImageResource(resId);
+                    iv.setFocusable(true);
+                    if (!AlexaAudioPlayer.getInstance(getActivity()).isPlaying() && ("PLAY_PAUSE".equals(name))) {
+                        Log.d(TAG, "refreshUI: -------------not Playing");
+                        iv.setImageResource(R.drawable.play_back_controller_pause);
+                    } else {
+                        iv.setImageResource(resId);
+                    }
                     iv.setLayoutParams(lp);
 
-                    mActivity.setOnPlayControlListener(new DisplayCardActivity.OnPlayControlListener() {
+                    /*mActivity.setOnPlayControlListener(new DisplayCardActivity.OnPlayControlListener() {
                         @Override
                         public void onPlayControl() {
                             for (int i = 0;i < mControlContainer.getChildCount(); i++) {
@@ -225,13 +231,14 @@ public class PlayerInfoFragment extends Fragment implements MusicProgressCallBac
                         public void onNextControl() {
                             mActivity.sendPlaybackControllerNextCommandIssued();
                         }
-                    });
+                    });*/
 
                     iv.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             switch (name) {
                                 case "PLAY_PAUSE":
+                                    Log.d(TAG, "onClick: -----------------");
                                     playControl(iv);
 
                                     break;
@@ -254,13 +261,14 @@ public class PlayerInfoFragment extends Fragment implements MusicProgressCallBac
     }
 
     private void playControl(ImageView iv) {
-        if (isPlaying) {
+        if (AlexaAudioPlayer.getInstance(getActivity()).isPlaying()) {
+            Log.d(TAG, "playControl: play_back_controller_play");
             mActivity.sendPlaybackControllerPauseCommandIssued();
             iv.setImageResource(R.drawable.play_back_controller_play);
         } else {
+            Log.d(TAG, "playControl: play_back_controller_pause");
             mActivity.sendPlaybackControllerPlayCommandIssued();
             iv.setImageResource(R.drawable.play_back_controller_pause);
         }
-        isPlaying = !isPlaying;
     }
 }
