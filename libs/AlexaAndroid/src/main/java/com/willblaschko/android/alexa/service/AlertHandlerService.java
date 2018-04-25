@@ -127,12 +127,20 @@ public class AlertHandlerService extends Service {
             Log.d(TAG, "handleEvent: SpeakStart-----------");
             isForeground = false;
             if (mPlayer != null && isPlayingAlert) {
+<<<<<<< HEAD
+=======
+                AlexaManager.getInstance(this).sendEvent(Event.getAlertEnteredBackgroundEvent(mToken), null);
+>>>>>>> develop
                 playAlert(false, 0);
             }
         } else if (TextUtils.equals("SpeakEnd", speakStatus)) {
             Log.d(TAG, "handleEvent: SpeakEnd-----------");
             isForeground = true;
             if (mPlayer != null && isPlayingAlert) {
+<<<<<<< HEAD
+=======
+                AlexaManager.getInstance(this).sendEvent(Event.getAlertEnteredForegroundEvent(mToken), null);
+>>>>>>> develop
                 playAlert(true, 0);
             }
         }
@@ -208,6 +216,9 @@ public class AlertHandlerService extends Service {
                 if (isStartEvent) {
                     if (AlertUtil.isNetworkConnected(AlertHandlerService.this)) {
                         AlexaManager.getInstance(AlertHandlerService.this).sendEvent(Event.getAlertStartedEvent(mToken), null);
+                        if (isForeground) {
+                            AlexaManager.getInstance(AlertHandlerService.this).sendEvent(Event.getAlertEnteredBackgroundEvent(mToken), null);
+                        }
                     } else {
                         UnSendBean unSendBean = new UnSendBean();
                         unSendBean.setToken(mToken);

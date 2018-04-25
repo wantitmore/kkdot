@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 
@@ -54,8 +55,6 @@ public class DisplayCardActivity extends BaseActivity {
     private FragmentManager mFragmentManager;
     private RawAudioRecorder recorder;
     private AlexaReceiver alexaReceiver;
-    private int mScreenWidth;
-    private int mScreenHeight;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,18 +110,9 @@ public class DisplayCardActivity extends BaseActivity {
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
-        startListening();
+//        startListening();
     }
 
-    public void moveVoiceViewToCenter() {
-        mVoiceStateView.setX((mScreenWidth - mVoiceStateView.getWidth()) / 2);
-    }
-
-
-    public void resetVoiceViewPosition() {
-        Log.d(TAG, "reset position");
-        mVoiceStateView.setX(mVoiceStateView.getLeft());
-    }
 
     @Override
     protected void onResume() {
@@ -132,6 +122,37 @@ public class DisplayCardActivity extends BaseActivity {
     private void search(){
         String text = search.getText().toString();
         alexaManager.sendTextRequest(text, getRequestCallback());
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_UP && mShowingFragment instanceof PlayerInfoFragment) {
+
+            if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                Log.d(TAG, "onKeyUp: enter--------");
+                onPlayControlListener.onPlayControl();
+            } else if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT)) {
+                Log.d(TAG, "onKeyUp: left------");
+                onPlayControlListener.onPreControl();
+
+            } else if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+                Log.d(TAG, "onKeyUp: right------");
+                onPlayControlListener.onNextControl();
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    public interface OnPlayControlListener {
+        void onPlayControl();
+        void onPreControl();
+        void onNextControl();
+    }
+
+    public OnPlayControlListener onPlayControlListener;
+
+    public void setOnPlayControlListener(OnPlayControlListener onPlayControlListener) {
+        this.onPlayControlListener = onPlayControlListener;
     }
 
 
@@ -150,7 +171,9 @@ public class DisplayCardActivity extends BaseActivity {
         } else if (renderObj instanceof PlayerInfoBean) {
 
             if (mShowingFragment instanceof PlayerInfoFragment) {
-
+                Log.d(TAG,"just refresh ui,not create new instance");
+                ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
+                return;
             }
             mShowingFragment = PlayerInfoFragment.newInstance();
         } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {

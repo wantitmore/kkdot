@@ -414,13 +414,32 @@ public class Event {
                 .setPayloadToken(token);
         return builder.toJson();
     }
+    public static String getPlaybackProgressReportDelayElapsedEvent(String token, long offset){
+        Builder builder = new Builder();
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("ProgressReportDelayElapsed")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
 
+    public static String getPlaybackProgressReportIntervalElapsedEvent(String token, long offset){
+        Builder builder = new Builder();
+        AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("ProgressReportIntervalElapsed")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
     public static String getPlaybackStopEvent(String token, long offset) {
         Builder builder = new Builder();
         AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
         builder.setHeaderNamespace("AudioPlayer")
                 .setHeaderName("PlaybackStopped")
-                .setPlayloadOffsetInMilliseconds(AudioPlayer != null ? AudioPlayer.getCurrentPosition():offset)
+                .setPlayloadOffsetInMilliseconds(offset)
                 .setHeaderMessageId(getUuid())
                 .setPayloadToken(token);
         return builder.toJson();

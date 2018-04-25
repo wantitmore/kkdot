@@ -2,16 +2,11 @@ package com.willblaschko.android.alexavoicelibrary;
 
 import android.app.Instrumentation;
 import android.content.Context;
-import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
@@ -22,16 +17,9 @@ import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayAudioItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayContentItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
 import com.willblaschko.android.alexa.interfaces.errors.AvsResponseException;
-import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaNextCommandItem;
-import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPauseCommandItem;
-import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPlayCommandItem;
-import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPreviousCommandItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceAllItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceEnqueuedItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsStopItem;
-import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
-import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
-import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsExpectSpeechItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
@@ -126,6 +114,8 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
         private boolean almostDoneFired = false;
         private boolean playbackStartedFired = false;
+        private boolean playbackProgressDelayFired = false;
+        long lastInterval = 0;
 
         @Override
         public void playerPrepared(AvsItem pendingItem) {
@@ -133,7 +123,13 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
 
         @Override
-        public void playerProgress(AvsItem item, long offsetInMilliseconds, float percent) {
+        public void playerProgress(AvsItem item, long offsetInMilliseconds, long  duration) {
+            float percent;
+            if(duration > 0){
+                percent = offsetInMilliseconds/duration;
+            }else{
+                percent = 0;
+            }
             if (BuildConfig.DEBUG) {
                 //Log.i(TAG, "Player percent: " + percent);
             }
@@ -141,8 +137,27 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 return;
             }
 
+            /*if(item instanceof AvsPlayRemoteItem){
+                AvsPlayRemoteItem playRemoteItem = (AvsPlayRemoteItem)item;
+                long progressReportDelay = playRemoteItem.getProgressReportDelayInMilliseconds();
+                long progressReportInterval = playRemoteItem.getmProgressReportIntervalInMilliseconds();
+                if(playbackProgressDelayFired ==false && progressReportDelay != 0 &&
+                        (offsetInMilliseconds >= progressReportDelay && offsetInMilliseconds - progressReportDelay < 1000)){
+                    playbackProgressDelayFired = true;
+                    sendPlaybackProgressReportDelayElapsedEvent(playRemoteItem.getToken(),offsetInMilliseconds);
+                }
+
+                if(progressReportInterval != 0 && offsetInMilliseconds/progressReportInterval != lastInterval ){
+
+                    if(offsetInMilliseconds/progressReportInterval - lastInterval == 1){
+                        sendPlaybackProgressReportIntervalElapsedEvent(playRemoteItem.getToken(),offsetInMilliseconds);
+                    }
+                    lastInterval = offsetInMilliseconds/progressReportInterval;
+                }
+            }*/
+
             if (mMusicProgressCallBack != null) {
-                mMusicProgressCallBack.onProgressChange(item, offsetInMilliseconds, percent);
+                mMusicProgressCallBack.onProgressChange(item, offsetInMilliseconds, duration);
             }
 
             if (!playbackStartedFired) {
@@ -165,9 +180,18 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
 
         @Override
+        public void playerStop(){
+            almostDoneFired = false;
+            playbackStartedFired = false;
+            playbackProgressDelayFired =false;
+            lastInterval = 0;
+        }
+        @Override
         public void itemComplete(AvsItem completedItem) {
             almostDoneFired = false;
             playbackStartedFired = false;
+            playbackProgressDelayFired =false;
+            lastInterval = 0;
 
             if (completedItem instanceof AvsPlayContentItem || completedItem == null) {
                 return;
@@ -238,6 +262,25 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private void sendPlaybackStartedEvent(AvsItem item) {
         alexaManager.sendPlaybackStartedEvent(item, 0, null);
         Log.i(TAG, "Sending sendPlaybackStartedEvent");
+    }
+
+
+    private void sendPlaybackProgressReportDelayElapsedEvent(String token,long offset){
+        alexaManager.sendPlaybackProgressReportDelayElapsedEvent(token,offset,requestCallback);
+        Log.i(TAG, "Sending sendPlaybackProgressReportDelayElapsedEvent");
+    }
+
+    private void sendPlaybackProgressReportIntervalElapsedEvent(String token,long offset){
+        alexaManager.sendPlaybackProgressReportIntervalElapsedEvent(token,offset,requestCallback);
+        Log.i(TAG, "Sending sendPlaybackProgressReportIntervalElapsedEvent");
+    }
+
+    private void sendPlaybackStopEvent() {
+        AvsPlayRemoteItem playRemoteItem = audioPlayer.getLastAvsPlayRemoteItem();
+        if(playRemoteItem != null) {
+            alexaManager.sendPlaybackStopEvent(playRemoteItem.getToken(),playRemoteItem.getStartOffset(),null);
+            Log.i(TAG, "Sending sendPlaybackStopEvent");
+        }
     }
 
     /**
@@ -374,6 +417,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             //stop our play
             Log.d(TAG,"audio player stop");
             audioPlayer.stop();
+            sendPlaybackStopEvent();
             avsQueue.remove(current);
         } else if (current instanceof AvsExpectSpeechItem) {
             startListening();

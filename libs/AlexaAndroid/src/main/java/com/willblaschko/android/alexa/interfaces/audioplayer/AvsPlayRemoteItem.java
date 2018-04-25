@@ -21,13 +21,18 @@ public class AvsPlayRemoteItem extends AvsItem {
     private String mStreamId;
     private long mStartOffset;
     private String mPlayerActivity;
+    long mProgressReportDelayInMilliseconds;
+    long mProgressReportIntervalInMilliseconds;
 
-    public AvsPlayRemoteItem(String token, String url, long startOffset) {
+    public AvsPlayRemoteItem(String token, String url, long startOffset,long progressReportDelayInMilliseconds,long progressReportIntervalInMilliseconds) {
         super(token);
         mUrl = url;
         mStartOffset = (startOffset < 0) ? 0 : startOffset;
         mPlayerActivity = PLAYER_ACTIVITY_IDLE;
+        mProgressReportDelayInMilliseconds =progressReportDelayInMilliseconds;
+        mProgressReportIntervalInMilliseconds = progressReportIntervalInMilliseconds;
     }
+
     public String getUrl() {
         return mUrl;
     }

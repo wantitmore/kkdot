@@ -187,7 +187,7 @@ public class ResponseParser {
                             Object renderObj = gson.fromJson(directive, targetClazz);
                             EventBus.getDefault().post(renderObj);
                     } else if (!"AudioPlayer".equals(nameSpace)) {
-                        EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
+                        //EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
                     }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -265,7 +265,23 @@ public class ResponseParser {
                             Log.d(TAG, e.toString());
                         }
                     }
+<<<<<<< HEAD
                     return new AvsPlayRemoteItem(directive.getPayload().getToken(), url, directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds());
+=======
+                    String token = directive.getPayload().getToken();
+
+                    long offset = directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds();
+                    long progressReportDelay =  0;
+                    long progressReportInterval = 0;
+                    Directive.ProgressReport progressReport = directive.getPayload().getAudioItem().getStream().getProgressReport();
+                    if(progressReport != null){
+                        progressReportDelay = progressReport.getProgressReportDelayInMilliseconds();
+                        progressReportInterval = progressReport.getProgressReportIntervalInMilliseconds();
+                    }
+
+
+                    return new AvsPlayRemoteItem(token, url,offset,progressReportDelay,progressReportInterval);
+>>>>>>> develop
                 }
             case Directive.TYPE_STOP_CAPTURE:
                 return new AvsStopCaptureItem(directive.getPayload().getToken());
