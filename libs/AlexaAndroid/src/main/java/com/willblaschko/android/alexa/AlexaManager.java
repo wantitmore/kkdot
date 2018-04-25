@@ -484,6 +484,16 @@ public class AlexaManager {
         String event = Event.getPlaybackStopEvent(token,offset);
         sendEvent(event,callback);
     }
+
+    public void sendPlaybackPausedEvent(String token,long offset,final AsyncCallback<AvsResponse, Exception> callback) {
+        String event = Event.getPlaybackPausedEvent(token, offset);
+        sendEvent(event,callback);
+    }
+
+    public void sendPlaybackResumedEvent(String token,long offset,final AsyncCallback<AvsResponse, Exception> callback) {
+        String event = Event.getPlaybackResumedEvent(token, offset);
+        sendEvent(event,callback);
+    }
     /**
      * Send an event to indicate that playback of a speech item has finished
      * See: {@link #sendEvent(String, AsyncCallback)}

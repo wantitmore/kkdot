@@ -2,11 +2,16 @@ package com.willblaschko.android.alexavoicelibrary;
 
 import android.app.Instrumentation;
 import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.widget.Toast;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
@@ -17,9 +22,16 @@ import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayAudioItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayContentItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
 import com.willblaschko.android.alexa.interfaces.errors.AvsResponseException;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaNextCommandItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPauseCommandItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPlayCommandItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPreviousCommandItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceAllItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceEnqueuedItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsStopItem;
+import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
+import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
+import com.willblaschko.android.alexa.interfaces.speaker.AvsSetVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsExpectSpeechItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
@@ -137,7 +149,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 return;
             }
 
-            /*if(item instanceof AvsPlayRemoteItem){
+            if(item instanceof AvsPlayRemoteItem){
                 AvsPlayRemoteItem playRemoteItem = (AvsPlayRemoteItem)item;
                 long progressReportDelay = playRemoteItem.getProgressReportDelayInMilliseconds();
                 long progressReportInterval = playRemoteItem.getmProgressReportIntervalInMilliseconds();
@@ -154,7 +166,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     }
                     lastInterval = offsetInMilliseconds/progressReportInterval;
                 }
-            }*/
+            }
 
             if (mMusicProgressCallBack != null) {
                 mMusicProgressCallBack.onProgressChange(item, offsetInMilliseconds, duration);
@@ -283,6 +295,22 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
     }
 
+    private void sendPlaybackPausedEvent(){
+        AvsPlayRemoteItem playRemoteItem = audioPlayer.getLastAvsPlayRemoteItem();
+        if(playRemoteItem != null) {
+            alexaManager.sendPlaybackPausedEvent(playRemoteItem.getToken(), playRemoteItem.getStartOffset(), null);
+            Log.i(TAG, "Sending sendPlaybackPausedEvent");
+        }
+    }
+
+    private void sendPlaybackResumedEvent(){
+        AvsPlayRemoteItem playRemoteItem = audioPlayer.getLastAvsPlayRemoteItem();
+        if(playRemoteItem != null) {
+            alexaManager.sendPlaybackResumedEvent(playRemoteItem.getToken(), playRemoteItem.getStartOffset(), null);
+            Log.i(TAG, "Sending sendPlaybackResumedEvent");
+        }
+    }
+
     /**
      * Send an event back to Alexa that we're done with our current speech event, this should supply us with the next item
      * https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/audioplayer#PlaybackNearlyFinished Event
@@ -400,6 +428,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         if (current instanceof AvsPlayRemoteItem) {
             //play a URL
             if (!audioPlayer.isPlaying()) {
+                if(((AvsPlayRemoteItem) current).isNeedResumed()) {
+                    sendPlaybackResumedEvent();
+                }
                 audioPlayer.playItem((AvsPlayRemoteItem) current);
             }
         } else if (current instanceof AvsPlayContentItem) {
@@ -455,6 +486,8 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
             if(audioPlayer.getCurrentItem() instanceof AvsPlayRemoteItem){
                 ((AvsPlayRemoteItem) audioPlayer.getCurrentItem()).setStartoffset(audioPlayer.getCurrentPosition());
+                ((AvsPlayRemoteItem) audioPlayer.getCurrentItem()).SetNeedResumed(true);
+                sendPlaybackPausedEvent();
             }
 
             audioPlayer.stop(false);

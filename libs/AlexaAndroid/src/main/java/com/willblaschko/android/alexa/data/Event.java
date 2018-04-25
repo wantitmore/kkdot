@@ -434,6 +434,7 @@ public class Event {
                 .setPayloadToken(token);
         return builder.toJson();
     }
+
     public static String getPlaybackStopEvent(String token, long offset) {
         Builder builder = new Builder();
         AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
@@ -445,6 +446,27 @@ public class Event {
         return builder.toJson();
     }
 
+    public static String getPlaybackPausedEvent(String token, long offset) {
+        Builder builder = new Builder();
+        AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("PlaybackPaused")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
+
+    public static String getPlaybackResumedEvent(String token, long offset) {
+        Builder builder = new Builder();
+        AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("PlaybackResumed")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
 
     public static String getPlaybackFinishedEvent(String token){
         Builder builder = new Builder();

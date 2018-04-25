@@ -23,6 +23,7 @@ public class AvsPlayRemoteItem extends AvsItem {
     private String mPlayerActivity;
     long mProgressReportDelayInMilliseconds;
     long mProgressReportIntervalInMilliseconds;
+    Boolean mNeedResumed;
 
     public AvsPlayRemoteItem(String token, String url, long startOffset,long progressReportDelayInMilliseconds,long progressReportIntervalInMilliseconds) {
         super(token);
@@ -31,6 +32,7 @@ public class AvsPlayRemoteItem extends AvsItem {
         mPlayerActivity = PLAYER_ACTIVITY_IDLE;
         mProgressReportDelayInMilliseconds =progressReportDelayInMilliseconds;
         mProgressReportIntervalInMilliseconds = progressReportIntervalInMilliseconds;
+        mNeedResumed = false;
     }
 
     public String getUrl() {
@@ -49,4 +51,19 @@ public class AvsPlayRemoteItem extends AvsItem {
 
     public String getPlayerAcivity(){ return mPlayerActivity; }
 
+    public long getProgressReportDelayInMilliseconds(){
+        return mProgressReportDelayInMilliseconds;
+    }
+
+    public long getmProgressReportIntervalInMilliseconds(){
+        return mProgressReportIntervalInMilliseconds;
+    }
+
+    public Boolean isNeedResumed(){
+        return mNeedResumed;
+    }
+
+    public void SetNeedResumed(Boolean needResumed){
+        mNeedResumed = needResumed;
+    }
 }

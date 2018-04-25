@@ -110,7 +110,7 @@ public class DisplayCardActivity extends BaseActivity {
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
-//        startListening();
+        startListening();
     }
 
 
@@ -175,6 +175,7 @@ public class DisplayCardActivity extends BaseActivity {
                 ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
                 return;
             }
+
             mShowingFragment = PlayerInfoFragment.newInstance();
         } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
             mShowingFragment = EmptyFragment.newInstance();
@@ -264,12 +265,12 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
         if (recorder == null) {
-            stopCurrentPlayingItem();
             mVoiceStateView.setCurrentState(CircleVoiceStateView.State.LISTENING);
             Log.d(TAG, "startListening: recorder = null");
             recorder = new RawAudioRecorder(AUDIO_RATE);
             recorder.start();
             alexaManager.sendAudioRequest(requestBody, getRequestCallback());
+            stopCurrentPlayingItem();
         }
 
     }
@@ -319,10 +320,7 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
             recorder.stop();
-            Log.d(TAG, "stopListening: ---recorder is " + recorder);
-            if (recorder != null) {
-                recorder.release();
-            }
+            recorder.release();
             recorder = null;
         }
     }
