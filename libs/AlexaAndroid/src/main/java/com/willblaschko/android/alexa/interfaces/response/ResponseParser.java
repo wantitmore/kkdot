@@ -55,6 +55,8 @@ import java.util.regex.Pattern;
 
 import okhttp3.Headers;
 import okhttp3.Response;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 import static okhttp3.internal.Util.UTF_8;
 
@@ -185,7 +187,7 @@ public class ResponseParser {
                             Object renderObj = gson.fromJson(directive, targetClazz);
                             EventBus.getDefault().post(renderObj);
                     } else if (!"AudioPlayer".equals(nameSpace)) {
-                        EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
+                        //EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
                     }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -249,7 +251,33 @@ public class ResponseParser {
                 if(url.contains("cid:")){
                     return new AvsPlayAudioItem(directive.getPayload().getToken(), url, audio.get(url));
                 }else{
-                    return new AvsPlayRemoteItem(directive.getPayload().getToken(), url, directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds());
+                   if(url.contains("opml.radiotime.com")) {
+                        try {
+                            //opml.radiotime.com provides M3U file for audio play
+                            OkHttpClient client = new OkHttpClient();
+                            Request request = new Request.Builder()
+                                    .url(url)
+                                    .build();
+                            Response response = client.newCall(request).execute();
+                            url = response.body().string().trim();
+                            Log.d(TAG, "real url:" + url);
+                        } catch (Exception e) {
+                            Log.d(TAG, e.toString());
+                        }
+                    }
+                    String token = directive.getPayload().getToken();
+
+                    long offset = directive.getPayload().getAudioItem().getStream().getOffsetInMilliseconds();
+                    long progressReportDelay =  0;
+                    long progressReportInterval = 0;
+                    Directive.ProgressReport progressReport = directive.getPayload().getAudioItem().getStream().getProgressReport();
+                    if(progressReport != null){
+                        progressReportDelay = progressReport.getProgressReportDelayInMilliseconds();
+                        progressReportInterval = progressReport.getProgressReportIntervalInMilliseconds();
+                    }
+
+
+                    return new AvsPlayRemoteItem(token, url,offset,progressReportDelay,progressReportInterval);
                 }
             case Directive.TYPE_STOP_CAPTURE:
                 return new AvsStopCaptureItem(directive.getPayload().getToken());

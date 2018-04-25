@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 
@@ -46,7 +47,6 @@ public class DisplayCardActivity extends BaseActivity {
 
     private final static String TAG = DisplayCardActivity.class.getSimpleName();
     private static final int AUDIO_RATE = 16000;
-    private final static int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private CircleVoiceStateView mVoiceStateView;
     private EditText search;
     private View button;
@@ -55,8 +55,6 @@ public class DisplayCardActivity extends BaseActivity {
     private FragmentManager mFragmentManager;
     private RawAudioRecorder recorder;
     private AlexaReceiver alexaReceiver;
-    private int mScreenWidth;
-    private int mScreenHeight;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -112,18 +110,9 @@ public class DisplayCardActivity extends BaseActivity {
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         alexaReceiver = new AlexaReceiver();
         registerReceiver(alexaReceiver, filter);
-        startListening();
+//        startListening();
     }
 
-    public void moveVoiceViewToCenter() {
-        mVoiceStateView.setX((mScreenWidth - mVoiceStateView.getWidth()) / 2);
-    }
-
-
-    public void resetVoiceViewPosition() {
-        Log.d(TAG, "reset position");
-        mVoiceStateView.setX(mVoiceStateView.getLeft());
-    }
 
     @Override
     protected void onResume() {
@@ -133,6 +122,37 @@ public class DisplayCardActivity extends BaseActivity {
     private void search(){
         String text = search.getText().toString();
         alexaManager.sendTextRequest(text, getRequestCallback());
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_UP && mShowingFragment instanceof PlayerInfoFragment) {
+
+            if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                Log.d(TAG, "onKeyUp: enter--------");
+                onPlayControlListener.onPlayControl();
+            } else if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT)) {
+                Log.d(TAG, "onKeyUp: left------");
+                onPlayControlListener.onPreControl();
+
+            } else if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+                Log.d(TAG, "onKeyUp: right------");
+                onPlayControlListener.onNextControl();
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    public interface OnPlayControlListener {
+        void onPlayControl();
+        void onPreControl();
+        void onNextControl();
+    }
+
+    public OnPlayControlListener onPlayControlListener;
+
+    public void setOnPlayControlListener(OnPlayControlListener onPlayControlListener) {
+        this.onPlayControlListener = onPlayControlListener;
     }
 
 
@@ -151,31 +171,23 @@ public class DisplayCardActivity extends BaseActivity {
         } else if (renderObj instanceof PlayerInfoBean) {
 
             if (mShowingFragment instanceof PlayerInfoFragment) {
-
+                Log.d(TAG,"just refresh ui,not create new instance");
+                ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
+                return;
             }
 
             mShowingFragment = PlayerInfoFragment.newInstance();
-        } else {
+        } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
             mShowingFragment = EmptyFragment.newInstance();
         }
         if (renderObj instanceof Parcelable) {
             args.putParcelable("args", (Parcelable) renderObj);
             mShowingFragment.setArguments(args);
         }
-        if (renderObj instanceof PlayerInfoBean) {
-            moveVoiceViewToCenter();
-        } else if (!(renderObj instanceof String)) {
-            resetVoiceViewPosition();
-        }
         FragmentTransaction transaction = mFragmentManager.beginTransaction();
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 //        transaction.setCustomAnimations()
         transaction.setCustomAnimations(R.animator.enter, R.animator.out).addToBackStack(null);
-        /*if (renderObj instanceof PlayerInfoBean) {
-            moveVoiceViewToCenter();
-        } else if (!(renderObj instanceof String)) {
-            resetVoiceViewPosition();
-        }*/
         transaction.replace(R.id.main_display_content, mShowingFragment).commitAllowingStateLoss();
      }
 
@@ -191,7 +203,7 @@ public class DisplayCardActivity extends BaseActivity {
 //                    Log.d(TAG, "writeTo: record is null? " + recorder);
                     if (recorder != null) {
                         final float rmsdb = recorder.getRmsdb();
-                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
+//                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
                         CircleVoiceStateView.State currentState = mVoiceStateView.getCurrentState();
 
                         if (changeState && rmsdb != 0) {
@@ -209,7 +221,7 @@ public class DisplayCardActivity extends BaseActivity {
                         sink.write(recorder.consumeRecording());
                     }
                 } catch (Exception e) {
-                    Log.d(TAG, "writeTo: error is " + e.getMessage());
+                    Log.e(TAG, "writeTo: error is " + e.getMessage());
                     e.printStackTrace();
                 }
                 try {
@@ -253,6 +265,7 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
         if (recorder == null) {
+            stopCurrentPlayingItem();
             mVoiceStateView.setCurrentState(CircleVoiceStateView.State.LISTENING);
             Log.d(TAG, "startListening: recorder = null");
             recorder = new RawAudioRecorder(AUDIO_RATE);

@@ -148,8 +148,8 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
             long alertTime = TimeUtil.getAlertTime(mScheduledTime);
             Log.d(TAG, "setAlertTask: scheduleTime is -->" + mScheduledTime + ",now is " + System.currentTimeMillis());
             Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(/*alertTime*/System.currentTimeMillis());
-            calendar.add(Calendar.SECOND, 15);
+            calendar.setTimeInMillis(alertTime/*System.currentTimeMillis()*/);
+//            calendar.add(Calendar.SECOND, 15);
 
             AlarmManager am = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
             am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);

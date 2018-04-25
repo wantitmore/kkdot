@@ -106,6 +106,7 @@ public class DownChannelService extends Service {
                         while (!bufferedSource.exhausted()) {
                             String line = bufferedSource.readUtf8Line();
                             try {
+                                Log.d(TAG, "onResponse: line");
                                 Directive directive = ResponseParser.getDirective(line);
                                 handler.handleDirective(directive);
 

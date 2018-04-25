@@ -247,6 +247,7 @@ public class Directive {
             return stream;
         }
     }
+
     public static class Stream{
         String url;
         String streamFormat;
@@ -254,8 +255,7 @@ public class Directive {
         String expiryTime;
         String token;
         String expectedPreviousToken;
-        //todo progressReport
-
+        ProgressReport progressReport;
 
         public String getUrl() {
             return url;
@@ -280,8 +280,23 @@ public class Directive {
         public String getExpectedPreviousToken() {
             return expectedPreviousToken;
         }
+
+        public ProgressReport getProgressReport(){
+            return progressReport;
+        }
+    }
+    public static class ProgressReport{
+        long progressReportDelayInMilliseconds;
+        long progressReportIntervalInMilliseconds;
+
+        public long getProgressReportDelayInMilliseconds(){
+            return progressReportDelayInMilliseconds;
     }
 
+        public long getProgressReportIntervalInMilliseconds(){
+            return progressReportIntervalInMilliseconds;
+        }
+    }
     public static class DirectiveWrapper{
         Directive directive;
         public Directive getDirective(){

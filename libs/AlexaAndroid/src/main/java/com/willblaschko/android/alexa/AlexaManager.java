@@ -66,6 +66,7 @@ public class AlexaManager {
     private static Context mContext;
     private boolean mIsRecording = false;
     public static boolean getKKSkill = false;
+//    ExecutorService pool = Executors.newFixedThreadPool(Integer.MAX_VALUE);
 
     private AlexaManager(Context context, String productId){
         FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
@@ -372,6 +373,7 @@ public class AlexaManager {
                                     }
                                     return null;
                                 }
+
                                 @Override
                                 protected void onPostExecute(AvsResponse avsResponse) {
                                     super.onPostExecute(avsResponse);
@@ -468,6 +470,20 @@ public class AlexaManager {
         sendEvent(event, callback);
     }
 
+    public void sendPlaybackProgressReportDelayElapsedEvent(String token,long offset,final AsyncCallback<AvsResponse, Exception> callback) {
+        String event = Event.getPlaybackProgressReportDelayElapsedEvent(token,offset);
+        sendEvent(event,callback);
+    }
+
+    public void sendPlaybackProgressReportIntervalElapsedEvent(String token,long offset,final AsyncCallback<AvsResponse, Exception> callback) {
+        String event = Event.getPlaybackProgressReportIntervalElapsedEvent(token,offset);
+        sendEvent(event,callback);
+    }
+
+    public void sendPlaybackStopEvent(String token,long offset,final AsyncCallback<AvsResponse, Exception> callback) {
+        String event = Event.getPlaybackStopEvent(token,offset);
+        sendEvent(event,callback);
+    }
     /**
      * Send an event to indicate that playback of a speech item has finished
      * See: {@link #sendEvent(String, AsyncCallback)}
@@ -540,7 +556,7 @@ public class AlexaManager {
                                 protected void onPostExecute(AvsResponse avsResponse) {
                                     super.onPostExecute(avsResponse);
                                 }
-                            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            }./*executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)*/execute();
                         }
 
                         @Override
@@ -643,7 +659,7 @@ public class AlexaManager {
                 if(response.code() == HttpURLConnection.HTTP_NO_CONTENT){
                     Log.w(TAG, "Received a 204 response code from Amazon, is this expected?");
                 }
-                Log.d(TAG, "success: respon is -->" + response);
+
                 final AvsResponse items = response.code() == HttpURLConnection.HTTP_NO_CONTENT ? new AvsResponse() :
                         ResponseParser.parseResponse(response.body().byteStream(), getBoundary(response));
                 response.body().close();

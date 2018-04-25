@@ -14,6 +14,7 @@ import com.willblaschko.android.alexa.utility.AlertUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static com.willblaschko.android.alexa.utility.Util.getUuid;
 
@@ -237,12 +238,21 @@ public class Event {
     }
 
     public static String getSpeechRecognizerEvent(AvsItem item) {
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".toCharArray();
+        StringBuilder strBuilder = new StringBuilder("dialogRequest-");
+        Random random = new Random();
+
+        for (int i = 0; i < 8; i++) {
+            char c = chars[random.nextInt(chars.length)];
+            strBuilder.append(c);
+        }
+
         Builder builder = new Builder();
         builder.setHeaderNamespace("SpeechRecognizer")
                 .setContext(getContext())
                 .setHeaderName("Recognize")
                 .setHeaderMessageId(getUuid())
-                .setHeaderDialogRequestId("dialogRequest-321")
+                .setHeaderDialogRequestId(strBuilder.toString())
                 .setPayloadFormat("AUDIO_L16_RATE_16000_CHANNELS_1")
                 .setPayloadProfile("CLOSE_TALK");
 
@@ -404,13 +414,32 @@ public class Event {
                 .setPayloadToken(token);
         return builder.toJson();
     }
+    public static String getPlaybackProgressReportDelayElapsedEvent(String token, long offset){
+        Builder builder = new Builder();
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("ProgressReportDelayElapsed")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
 
+    public static String getPlaybackProgressReportIntervalElapsedEvent(String token, long offset){
+        Builder builder = new Builder();
+        AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
+        builder.setHeaderNamespace("AudioPlayer")
+                .setHeaderName("ProgressReportIntervalElapsed")
+                .setPlayloadOffsetInMilliseconds(offset)
+                .setHeaderMessageId(getUuid())
+                .setPayloadToken(token);
+        return builder.toJson();
+    }
     public static String getPlaybackStopEvent(String token, long offset) {
         Builder builder = new Builder();
         AlexaAudioPlayer AudioPlayer = AlexaAudioPlayer.getInstance(null);
         builder.setHeaderNamespace("AudioPlayer")
                 .setHeaderName("PlaybackStopped")
-                .setPlayloadOffsetInMilliseconds(AudioPlayer != null ? AudioPlayer.getCurrentPosition():offset)
+                .setPlayloadOffsetInMilliseconds(offset)
                 .setHeaderMessageId(getUuid())
                 .setPayloadToken(token);
         return builder.toJson();

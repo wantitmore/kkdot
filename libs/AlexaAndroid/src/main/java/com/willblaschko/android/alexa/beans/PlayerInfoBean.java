@@ -58,6 +58,7 @@ public class PlayerInfoBean implements Parcelable {
             private String namespace;
             private String name;
             private String messageId;
+            private String dialogRequestId;
 
             public String getNamespace() {
                 return namespace;
@@ -83,6 +84,10 @@ public class PlayerInfoBean implements Parcelable {
                 this.messageId = messageId;
             }
 
+            public String getDialogRequestId(){
+                return dialogRequestId;
+            }
+
             @Override
             public int describeContents() {
                 return 0;
@@ -93,6 +98,7 @@ public class PlayerInfoBean implements Parcelable {
                 dest.writeString(this.namespace);
                 dest.writeString(this.name);
                 dest.writeString(this.messageId);
+                dest.writeString(this.dialogRequestId);
             }
 
             public HeaderBean() {
@@ -102,6 +108,7 @@ public class PlayerInfoBean implements Parcelable {
                 this.namespace = in.readString();
                 this.name = in.readString();
                 this.messageId = in.readString();
+                this.dialogRequestId = in.readString();
             }
 
             public static final Creator<HeaderBean> CREATOR = new Creator<HeaderBean>() {
@@ -159,11 +166,30 @@ public class PlayerInfoBean implements Parcelable {
                  * mediaLengthInMilliseconds : 0
                  * title : NPR Hourly News Summary
                  */
-
-                private ProviderBean provider;
-                private ArtBean art;
-                private int mediaLengthInMilliseconds;
                 private String title;
+                private String titleSubtext1;
+                private String  titleSubtext2;
+                private String header;
+                private String headerSubtext1;
+                private int mediaLengthInMilliseconds;
+                private ArtBean art;
+                private ProviderBean provider;
+
+                public String getTitle() {
+                    return title;
+                }
+
+                public void setTitle(String title) {
+                    this.title = title;
+                }
+
+                public String getTitleSubtext1(){
+                    return titleSubtext1;
+                }
+
+                public String getTitleSubtext2(){
+                    return titleSubtext2;
+                }
 
                 public String getHeader() {
                     return header;
@@ -173,7 +199,13 @@ public class PlayerInfoBean implements Parcelable {
                     this.header = header;
                 }
 
-                private String header;
+                public String getHeaderSubtext1(){
+                    return headerSubtext1;
+                }
+
+                public int getMediaLengthInMilliseconds(){
+                    return mediaLengthInMilliseconds;
+                }
 
                 public ProviderBean getProvider() {
                     return provider;
@@ -191,21 +223,8 @@ public class PlayerInfoBean implements Parcelable {
                     this.art = art;
                 }
 
-                public int getMediaLengthInMilliseconds() {
-                    return mediaLengthInMilliseconds;
-                }
 
-                public void setMediaLengthInMilliseconds(int mediaLengthInMilliseconds) {
-                    this.mediaLengthInMilliseconds = mediaLengthInMilliseconds;
-                }
 
-                public String getTitle() {
-                    return title;
-                }
-
-                public void setTitle(String title) {
-                    this.title = title;
-                }
 
                 public static class ProviderBean implements Parcelable {
                     /**
@@ -250,12 +269,18 @@ public class PlayerInfoBean implements Parcelable {
 
                             private String url;
 
+                            private String size;
+
                             public String getUrl() {
                                 return url;
                             }
 
                             public void setUrl(String url) {
                                 this.url = url;
+                            }
+
+                            public String getSize() {
+                                return size;
                             }
 
                             @Override
@@ -368,6 +393,7 @@ public class PlayerInfoBean implements Parcelable {
                          */
 
                         private String url;
+                        private String size;
 
                         public String getUrl() {
                             return url;
@@ -376,6 +402,8 @@ public class PlayerInfoBean implements Parcelable {
                         public void setUrl(String url) {
                             this.url = url;
                         }
+
+                        public String getSize(){return size;}
 
                         @Override
                         public int describeContents() {
