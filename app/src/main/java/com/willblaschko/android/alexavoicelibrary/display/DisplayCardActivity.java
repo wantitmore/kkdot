@@ -175,7 +175,6 @@ public class DisplayCardActivity extends BaseActivity {
                 ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
                 return;
             }
-
             mShowingFragment = PlayerInfoFragment.newInstance();
         } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
             mShowingFragment = EmptyFragment.newInstance();
@@ -320,7 +319,10 @@ public class DisplayCardActivity extends BaseActivity {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
             recorder.stop();
-            recorder.release();
+            Log.d(TAG, "stopListening: ---recorder is " + recorder);
+            if (recorder != null) {
+                recorder.release();
+            }
             recorder = null;
         }
     }
