@@ -160,6 +160,11 @@ public class CircleVoiceStateView extends View {
 
     public void stopAnim() {
         if (mValueAnimator != null) {
+            /*new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                }
+            });*/
             mValueAnimator.cancel();
         }
     }

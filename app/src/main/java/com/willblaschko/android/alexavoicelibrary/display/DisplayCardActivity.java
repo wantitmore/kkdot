@@ -259,7 +259,6 @@ public class DisplayCardActivity extends BaseActivity {
         overridePendingTransition(0,R.animator.out_activity);
     }
 
-   @Override
     protected void startListening() {
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
@@ -274,42 +273,35 @@ public class DisplayCardActivity extends BaseActivity {
 
     }
 
-    @Override
     protected void stateListening() {
         Log.d(TAG, "------------> stateListening");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.ACTIVE_LISTENING);
     }
 
-    @Override
     protected void stateProcessing() {
         Log.d(TAG, "------------> stateProcessing");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.THINKING);
     }
 
-    @Override
     protected void stateSpeaking() {
         Log.d(TAG, "------------> stateSpeaking");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SPEAKING);
     }
 
-    @Override
     protected void stateFinished() {
         Log.d(TAG, "------------> stateFinished");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
     }
 
-    @Override
     protected void statePrompting() {
         Log.d(TAG, "------------> statePrompting");
     }
 
-    @Override
     protected void stateNone() {
         Log.d(TAG, "------------> stateNone");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
     }
 
-    @Override
     protected void  stateError(){
         Log.d(TAG, "------------> stateError");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SYSTEM_ERR);

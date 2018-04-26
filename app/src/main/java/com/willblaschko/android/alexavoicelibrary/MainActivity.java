@@ -61,7 +61,6 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
 
     }
 
-    @Override
     protected void startListening() {
         Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_FRAGMENT);
         if (fragment != null && fragment.isVisible()) {
@@ -128,9 +127,13 @@ public class MainActivity extends BaseActivity implements ActionsFragment.Action
         statusBar.animate().alpha(0);
     }
 
-   @Override
     protected void stateError(){
-
+        /*new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                mValueAnimator.cancel();
+            }
+        });*/
    }
 
     @Override

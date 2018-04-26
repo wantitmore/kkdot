@@ -1,12 +1,20 @@
-package com.willblaschko.android.alexavoicelibrary;
+package com.willblaschko.android.alexavoicelibrary.display;
 
-import android.app.Instrumentation;
+import android.app.IntentService;
+import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.WindowManager;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
@@ -20,23 +28,35 @@ import com.willblaschko.android.alexa.interfaces.errors.AvsResponseException;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceAllItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceEnqueuedItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsStopItem;
+import com.willblaschko.android.alexa.interfaces.response.ResponseParser;
 import com.willblaschko.android.alexa.interfaces.speechrecognizer.AvsExpectSpeechItem;
 import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
+import com.willblaschko.android.alexa.requestbody.DataRequestBody;
+import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
-import com.willblaschko.android.alexavoicelibrary.display.MusicProgressCallBack;
+import com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import ee.ioc.phon.android.speechutils.RawAudioRecorder;
+import okio.BufferedSink;
 
 import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUCT_ID;
 
+
 /**
- * @author will on 5/30/2016.
+ * An {@link IntentService} subclass for handling asynchronous task requests in
+ * a service on a separate handler thread.
+ * <p>
+ * TODO: Customize class - update intent actions and extra parameters.
  */
+public class DisplayService extends Service implements BaseListenerFragment.AvsListenerInterface {
 
-public abstract class BaseActivity extends AppCompatActivity implements BaseListenerFragment.AvsListenerInterface {
-
-    private final static String TAG = "BaseActivity";
+    private static final String TAG = "DisplayService";
+    private static final int AUDIO_RATE = 16000;
 
     private final static int STATE_LISTENING = 1;
     private final static int STATE_PROCESSING = 2;
@@ -44,52 +64,61 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private final static int STATE_PROMPTING = 4;
     private final static int STATE_FINISHED = 0;
     private final static int STATE_ERROR = 5;
-    private AlexaManager alexaManager;
     private AlexaAudioPlayer audioPlayer;
     private List<AvsItem> avsQueue = new ArrayList<>();
     private MusicProgressCallBack mMusicProgressCallBack;
 
-    private long startTime = 0;
+    private RawAudioRecorder recorder;
+    private AlexaManager alexaManager;
+    private CircleVoiceStateView mVoiceStateView;
+    WindowManager mWindowManager;
+    private AlexaReceiver mAlexaReceiver;
+
+    public DisplayService() {
+        super();
+    }
+
 
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreate() {
+        super.onCreate();
         initAlexaAndroid();
-    }
-
-    public void setMusicProgressCallBack(MusicProgressCallBack callBack) {
-        mMusicProgressCallBack = callBack;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (audioPlayer != null) {
-            audioPlayer.stop();
-        }
+        IntentFilter filter = new IntentFilter();
+//        filter.addAction("com.konka.android.intent.action.START_VOICE");
+        filter.addAction("com.konka.android.intent.action.STOP_VOICE");
+        mAlexaReceiver = new AlexaReceiver();
+        registerReceiver(mAlexaReceiver, filter);
     }
 
     @Override
-    protected void onDestroy() {
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
+        createAnFloatWindow(this);
+        startListening();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    @Override
+    public void onDestroy() {
         super.onDestroy();
-        if (audioPlayer != null) {
-            //remove callback to avoid memory leaks
-            audioPlayer.removeCallback(alexaAudioPlayerCallback);
-            audioPlayer.release();
+        Log.d(TAG, "onDestroy: =================");
+        if (mAlexaReceiver != null) {
+            unregisterReceiver(mAlexaReceiver);
+            mAlexaReceiver = null;
         }
     }
 
-
+    @Nullable
     @Override
-    public AsyncCallback<AvsResponse, Exception> getRequestCallback() {
-        return requestCallback;
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
+   /* @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
 
-    public abstract void fadeOutView();
-
+    }*/
 
     private void initAlexaAndroid() {
         //get our AlexaManager instance for convenience
@@ -109,7 +138,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         //alexaManager.sendSynchronizeStateEvent(requestCallback);
     }
 
-    //Our callback that deals with removing played items in our media player and then checking to see if more items exist
     private AlexaAudioPlayer.Callback alexaAudioPlayerCallback = new AlexaAudioPlayer.Callback() {
 
         private boolean almostDoneFired = false;
@@ -141,7 +169,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 AvsPlayRemoteItem playRemoteItem = (AvsPlayRemoteItem)item;
                 long progressReportDelay = playRemoteItem.getProgressReportDelayInMilliseconds();
                 long progressReportInterval = playRemoteItem.getmProgressReportIntervalInMilliseconds();
-                if(playbackProgressDelayFired ==false && progressReportDelay != 0 &&
+                if(!playbackProgressDelayFired && progressReportDelay != 0 &&
                         (offsetInMilliseconds >= progressReportDelay && offsetInMilliseconds - progressReportDelay < 1000)){
                     playbackProgressDelayFired = true;
                     sendPlaybackProgressReportDelayElapsedEvent(playRemoteItem.getToken(),offsetInMilliseconds);
@@ -172,7 +200,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     Log.i(TAG, "AlmostDone " + item.getToken() + " fired: " + percent);
                 }
                 almostDoneFired = true;
-                if(item instanceof AvsPlayAudioItem||item instanceof AvsPlayRemoteItem) {
+                if(item instanceof AvsPlayAudioItem ||item instanceof AvsPlayRemoteItem) {
                     Log.i(TAG, "AlmostDone " + item.getToken() + " fired: " + percent);
                     sendPlaybackNearlyFinishedEvent( item, offsetInMilliseconds);
                 }
@@ -210,7 +238,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
             //if(BuildConfig.DEBUG)
             if (avsQueue.size() <= 0) {
-                fadeOutView();
+//                fadeOutView();
             }
         }
 
@@ -228,10 +256,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
 
     };
 
-    /**
-     * Send an event back to Alexa that we're nearly done with our current playback event, this should supply us with the next item
-     * https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/audioplayer#PlaybackNearlyFinished Event
-     */
     private void sendPlaybackNearlyFinishedEvent(AvsItem item, long offsetInMilliseconds){
         if (item != null) {
             alexaManager.sendPlaybackNearlyFinishedEvent(item, offsetInMilliseconds, requestCallback);
@@ -314,7 +338,6 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
     private AsyncCallback<AvsResponse, Exception> requestCallback = new AsyncCallback<AvsResponse, Exception>() {
         @Override
         public void start() {
-            startTime = System.currentTimeMillis();
             Log.i(TAG, "Event Start");
             //setState(STATE_PROCESSING); //it only changes the UI
         }
@@ -367,9 +390,9 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                     addTotail = false;
                     avsQueue.remove(audioPlayer.getCurrentItem());
                 }else if(response.get(i) instanceof  AvsSpeakItem) {
-                        addTotail = false;
-                        if(audioPlayer.isPlaying()) {
-                            audioPlayer.stop();
+                    addTotail = false;
+                    if(audioPlayer.isPlaying()) {
+                        audioPlayer.stop();
                     }
                 }
             }
@@ -380,17 +403,17 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                 }
             }
             if(addTotail) {
-            avsQueue.addAll(response);
+                avsQueue.addAll(response);
             }else{
                 avsQueue.addAll(0,response);
             }
             Log.i(TAG,"avsQueue member:");
             for(int i = 0;i<avsQueue.size();i++){
                 Log.i(TAG, i+":"+avsQueue.get(i).getClass().getName());
-        }
+            }
         }
         if(checkAfter) {
-        checkQueue();
+            checkQueue();
         }
     }
 
@@ -429,7 +452,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         } else if (current instanceof AvsSpeakItem) {
             //play a sound file
             if (!audioPlayer.isPlaying()) {
-            audioPlayer.playItem((AvsSpeakItem) current);
+                audioPlayer.playItem((AvsSpeakItem) current);
             }
             setState(STATE_SPEAKING);
         } else if (current instanceof AvsStopItem) {
@@ -439,11 +462,11 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             sendPlaybackStopEvent();
             avsQueue.remove(current);
         } else if (current instanceof AvsExpectSpeechItem) {
-            mOnnStateListener.startListening();
+            startListening();
             avsQueue.remove(current);
         }
         else if (current instanceof AvsResponseException) {
-            runOnUiThread(new Runnable() {
+            /*DisplayService.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     new AlertDialog.Builder(BaseActivity.this)
@@ -452,7 +475,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
                             .setPositiveButton(android.R.string.ok, null)
                             .show();
                 }
-            });
+            });*/
 
             avsQueue.remove(current);
             checkQueue();
@@ -462,6 +485,175 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             checkQueue();
         }
     }
+
+
+    private void setState(final int state) {
+        Log.d(TAG, "setState: -------------- " + state);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                switch (state) {
+                    case (STATE_LISTENING):
+                        stateListening();
+                        break;
+                    case (STATE_PROCESSING):
+                        stateProcessing();
+                        break;
+                    case (STATE_SPEAKING):
+                        stateSpeaking();
+                        break;
+                    case (STATE_FINISHED):
+                        stateFinished();
+                        break;
+                    case (STATE_PROMPTING):
+                        statePrompting();
+                        break;
+                    case (STATE_ERROR):
+                        stateError();
+                        break;
+                    default:
+                        stateNone();
+                        break;
+                }
+            }
+        });
+    }
+
+    protected void stateListening() {
+        Log.d(TAG, "------------> stateListening");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.ACTIVE_LISTENING);
+    }
+
+    protected void stateProcessing() {
+        Log.d(TAG, "------------> stateProcessing");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.THINKING);
+    }
+
+    protected void stateSpeaking() {
+        Log.d(TAG, "------------> stateSpeaking");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SPEAKING);
+    }
+
+    protected void stateFinished() {
+        Log.d(TAG, "------------> stateFinished");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
+    }
+
+    protected void statePrompting() {
+        Log.d(TAG, "------------> statePrompting");
+    }
+
+    protected void stateNone() {
+        Log.d(TAG, "------------> stateNone");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
+    }
+
+    protected void  stateError(){
+        Log.d(TAG, "------------> stateError");
+        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SYSTEM_ERR);
+    }
+
+
+    private void createAnFloatWindow(Context context) {
+        if (mVoiceStateView == null) {
+            mVoiceStateView = new CircleVoiceStateView(context);
+            mVoiceStateView.setBackgroundColor(Color.YELLOW);
+            mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+            layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+            layoutParams.format = PixelFormat.TRANSLUCENT;
+            layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
+            layoutParams.alpha = 0.8f;
+            layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
+            layoutParams.x = 90;
+            layoutParams.y = 0;
+            layoutParams.width = 140;
+            layoutParams.height = 140;
+
+            mWindowManager.addView(mVoiceStateView, layoutParams);
+        }
+
+    }
+
+    @Override
+    public AsyncCallback<AvsResponse, Exception> getRequestCallback() {
+        return requestCallback;
+    }
+
+
+    public void startListening() {
+        Log.d(TAG, "------------> startListening");
+        //recorder is not null,mean that an audio request is sentting
+        if (recorder == null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.LISTENING);
+            Log.d(TAG, "startListening: recorder = null");
+            recorder = new RawAudioRecorder(AUDIO_RATE);
+            recorder.start();
+            alexaManager.sendAudioRequest(requestBody, getRequestCallback());
+            stopCurrentPlayingItem();
+        }
+    }
+
+
+    private DataRequestBody requestBody = new DataRequestBody() {
+        @Override
+        public void writeTo(BufferedSink sink) throws IOException {
+//            Log.d(TAG, "writeTo: recorder is " + recorder + ", is Pa");
+            boolean changeState = true;
+//            Log.i(TAG,"will enter writeTo while loop");
+            while (recorder != null && !recorder.isPausing()) {
+                try {
+//                    Log.d(TAG, "writeTo: record is null? " + recorder);
+                    if (recorder != null) {
+                        final float rmsdb = recorder.getRmsdb();
+//                        Log.d(TAG, "run: ----rmsdb is " + rmsdb + ",recorder.isPausing():" + recorder.isPausing());
+                        CircleVoiceStateView.State currentState = mVoiceStateView.getCurrentState();
+
+                        if (changeState && rmsdb != 0) {
+                            mVoiceStateView.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mVoiceStateView.setCurrentState(CircleVoiceStateView.State.ACTIVE_LISTENING);
+                                }
+                            });
+                            changeState =false;
+                        }
+                    }
+
+                    if (sink != null && recorder != null) {
+                        sink.write(recorder.consumeRecording());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "writeTo: error is " + e.getMessage());
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(25);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+//            Log.i(TAG,"exit writeTo while loop");
+            mVoiceStateView.post(new Runnable() {
+                @Override
+                public void run() {
+                    stateProcessing();
+                }
+            });
+            stopListening();
+        }
+
+    };
+
+    private void stopListening() {
+        Log.d(TAG, "------------> stopListening");
+        if (recorder != null) {
+            recorder.stop();
+            recorder.release();
+            recorder = null;
+        }
+    }
+
     protected  void stopCurrentPlayingItem(){
         if (avsQueue.size() == 0|| audioPlayer == null) {
             return;
@@ -482,128 +674,16 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
         }
     }
 
+    public class AlexaReceiver extends BroadcastReceiver {
 
-    //functions unused
-    /*
-    private void adjustVolume(long adjust) {
-        setVolume(adjust, true);
-    }
-    private void setVolume(long volume) {
-        setVolume(volume, false);
-    }
-    private void setVolume(final long volume, final boolean adjust) {
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        final int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        long vol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
-        if (adjust) {
-            vol += volume * max / 100;
-        } else {
-            vol = volume * max / 100;
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "onReceive: intent is " + intent.getAction() + "--" + ResponseParser.RECOGNIZE_STATE);
+            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {
+                stopListening();
+            }
         }
-        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) vol, AudioManager.FLAG_VIBRATE);
-
-        alexaManager.sendVolumeChangedEvent(vol, vol == 0, requestCallback);
-
-        Log.i(TAG, "Volume set to : " + vol + "/" + max + " (" + volume + ")");
-
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                if (adjust) {
-                    Toast.makeText(BaseActivity.this, "Volume adjusted.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(BaseActivity.this, "Volume set to: " + (volume / 10), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-    }
-    private void setMute(final boolean isMute) {
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        am.setStreamMute(AudioManager.STREAM_MUSIC, isMute);
-
-        alexaManager.sendMutedEvent(isMute, requestCallback);
-
-        Log.i(TAG, "Mute set to : " + isMute);
-
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(BaseActivity.this, "Volume " + (isMute ? "muted" : "unmuted"), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }*/
-
-    /**
-     * Force the device to think that a hardware button has been pressed, this is used for Play/Pause/Previous/Next Media commands
-     * @param context
-     * @param keyCode keycode for the hardware button we're emulating
-     */
-    private static void sendMediaButton(Context context, int keyCode) {
-        Instrumentation inst = new Instrumentation();
-        inst.sendKeyDownUpSync(keyCode);
     }
 
-    private void setState(final int state) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                switch (state) {
-                    case (STATE_LISTENING):
-                        mOnnStateListener.stateListening();
-                        break;
-                    case (STATE_PROCESSING):
-                        mOnnStateListener.stateProcessing();
-                        break;
-                    case (STATE_SPEAKING):
-                        mOnnStateListener.stateSpeaking();
-                        break;
-                    case (STATE_FINISHED):
-                        mOnnStateListener.stateFinished();
-                        break;
-                    case (STATE_PROMPTING):
-                        mOnnStateListener.statePrompting();
-                        break;
-                    case (STATE_ERROR):
-                        mOnnStateListener.stateError();
-                        break;
-                    default:
-                        mOnnStateListener.stateNone();
-                        break;
-                }
-            }
-        });
-    }
-
-/*
-    protected abstract void startListening();
-    protected abstract void stateListening();
-
-    protected abstract void stateProcessing();
-
-    protected abstract void stateSpeaking();
-
-    protected abstract void stateFinished();
-
-    protected abstract void statePrompting();
-
-    protected abstract void stateNone();
-
-    protected abstract void stateError();*/
-
-    public interface OnStateListener {
-        void startListening();
-        void stateListening();
-        void stateProcessing();
-        void stateSpeaking();
-        void stateFinished();
-        void statePrompting();
-        void stateNone();
-        void stateError();
-    }
-
-    private OnStateListener mOnnStateListener;
-    public void setOnnStateListener(OnStateListener onStateListener) {
-        mOnnStateListener = onStateListener;
-    }
 }
