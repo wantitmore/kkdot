@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -41,6 +42,7 @@ import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
+import com.willblaschko.android.alexavoicelibrary.utility.CommonUtil;
 import com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView;
 import com.willblaschko.android.alexavoicelibrary.widget.ContentView;
 
@@ -65,7 +67,7 @@ import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUC
  * <p>
  * TODO: Customize class - update intent actions and extra parameters.
  */
-public class DisplayService extends Service implements BaseListenerFragment.AvsListenerInterface {
+public class DisplayService extends Service implements BaseListenerFragment.AvsListenerInterface, MusicProgressCallBack {
 
     private static final String TAG = "DisplayService";
     private static final int AUDIO_RATE = 16000;
@@ -88,6 +90,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     List<View> views = new ArrayList<>();
     private View mView;
 
+    DisplayService service = DisplayService.this;
+    private DisplayBinder mBinder = new DisplayBinder();
+
     public DisplayService() {
         super();
     }
@@ -109,9 +114,15 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
-        createVoiceStateWindow(this);
-        startListening();
+        boolean playTag = false;
+        if (intent != null) {
+            playTag = intent.getBooleanExtra("PlayTag", false);
+        }
+        if (!playTag) {
+            alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
+            createVoiceStateWindow(this);
+            startListening();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -129,7 +140,36 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+
+        return mBinder;
+    }
+
+    @Override
+    public void onProgressChange(AvsItem item, long offsetInMilliseconds, long duration) {
+
+    }
+
+    class DisplayBinder extends Binder {
+
+        public void setMusicProgressCallBack(MusicProgressCallBack callBack) {
+            service.setMusicProgressCallBack(callBack);
+        }
+
+        public void sendPlaybackControllerPreviousCommandIssued() {
+            service.sendPlaybackControllerPreviousCommandIssued();
+        }
+
+        public void sendPlaybackControllerNextCommandIssued() {
+            service.sendPlaybackControllerNextCommandIssued();
+        }
+
+        public void sendPlaybackControllerPauseCommandIssued() {
+            service.sendPlaybackControllerPauseCommandIssued();
+        }
+
+        public void sendPlaybackControllerPlayCommandIssued() {
+            service.sendPlaybackControllerPlayCommandIssued();
+        }
     }
 
    /* @Override
@@ -261,16 +301,16 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             //if(BuildConfig.DEBUG)
             if (avsQueue.size() <= 0) {
 //                fadeOutView();
-               /* if (mWindowManager != null) {
+                if (mWindowManager != null) {
                     if (mView != null) {
                         mWindowManager.removeViewImmediate(mView);
                         mView = null;
                     }
-                    if (mVoiceStateView != null) {
+                   /* if (mVoiceStateView != null) {
                         mWindowManager.removeViewImmediate(mVoiceStateView);
 //                        mVoiceStateView = null;
-                    }
-                }*/
+                    }*/
+                }
             }
         }
 
@@ -569,6 +609,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     protected void stateFinished() {
         Log.d(TAG, "------------> stateFinished");
         mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
+        if (mVoiceStateView !=null) {
+//            mVoiceStateView.setVisibility(View.INVISIBLE);
+        }
     }
 
     protected void statePrompting() {
@@ -696,11 +739,22 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void handleEvent(Object renderObj) {
 
-        Bundle args = new Bundle();
-
+        if (renderObj instanceof PlayerInfoBean) {
+            String topActivity = CommonUtil.getTopActivity(this);
+            Log.d(TAG, "handleEvent: topActivity is " +  topActivity);
+            if ("com.willblaschko.android.alexavoicelibrary.display.PlayInfoActivity".equals(topActivity)) {
+                Log.d(TAG,"just refresh ui,not create new instance");
+                return;
+            }
+            Intent intent = new Intent(this, PlayInfoActivity.class);
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("args", (Parcelable) renderObj);
+            intent.putExtras(bundle);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            return;
+        }
         if (renderObj instanceof Parcelable) {
-            args.putParcelable("args", (Parcelable) renderObj);
-//            mShowingFragment.setArguments(args);
             createContentFloatWindow(this, renderObj);
         }
     }
@@ -712,7 +766,6 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
                 mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             }
             mVoiceStateView = new CircleVoiceStateView(context);
-//            mVoiceStateView.setBackgroundColor(Color.YELLOW);
             WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
             layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
             layoutParams.format = PixelFormat.TRANSLUCENT;
@@ -725,6 +778,8 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             layoutParams.height = 220;
 
             mWindowManager.addView(mVoiceStateView, layoutParams);
+        } else {
+            mVoiceStateView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -737,7 +792,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         if (mWindowManager == null) {
             mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         }
-        mVoiceStateView.setVisibility(View.INVISIBLE);
+        if (avsQueue != null && avsQueue.size() > 0 && avsQueue.get(0) instanceof AvsSpeakItem) {
+//            mVoiceStateView.setVisibility(View.INVISIBLE);
+        }
         WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
         layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
         layoutParams.format = PixelFormat.TRANSLUCENT;
@@ -771,7 +828,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 //                ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
 //                return;
 //            }
-//
+
 //            mShowingFragment = PlayerInfoFragment.newInstance();
         } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
 //            mShowingFragment = EmptyFragment.newInstance();

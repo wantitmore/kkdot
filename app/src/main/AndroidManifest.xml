@@ -99,7 +99,9 @@
 
         <service
             android:name=".display.DisplayService"
-            android:exported="false"></service>
+            android:exported="false" />
+
+        <activity android:name=".display.PlayInfoActivity"></activity>
     </application>
 
 </manifest>
