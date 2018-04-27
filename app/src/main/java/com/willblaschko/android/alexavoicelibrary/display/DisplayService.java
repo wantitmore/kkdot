@@ -701,7 +701,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         if (renderObj instanceof Parcelable) {
             args.putParcelable("args", (Parcelable) renderObj);
 //            mShowingFragment.setArguments(args);
-            createAnFloatWindow(this, renderObj);
+            createContentFloatWindow(this, renderObj);
         }
     }
 
@@ -714,15 +714,15 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             mVoiceStateView = new CircleVoiceStateView(context);
 //            mVoiceStateView.setBackgroundColor(Color.YELLOW);
             WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-            layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+            layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
             layoutParams.format = PixelFormat.TRANSLUCENT;
             layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
             layoutParams.alpha = 0.8f;
             layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
             layoutParams.x = 90;
             layoutParams.y = 0;
-            layoutParams.width = 140;
-            layoutParams.height = 140;
+            layoutParams.width = 220;
+            layoutParams.height = 220;
 
             mWindowManager.addView(mVoiceStateView, layoutParams);
         }
@@ -730,13 +730,14 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
 
 
-    private void createAnFloatWindow(Context context, Object  renderObj) {
+    private void createContentFloatWindow(Context context, Object  renderObj) {
         if (renderObj == null) {
             return;
         }
         if (mWindowManager == null) {
             mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         }
+        mVoiceStateView.setVisibility(View.INVISIBLE);
         WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
         layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
         layoutParams.format = PixelFormat.TRANSLUCENT;
@@ -745,8 +746,8 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         layoutParams.gravity = Gravity.START | Gravity.TOP;
         layoutParams.x = 90;
         layoutParams.y = 0;
-        layoutParams.width = 300;
-        layoutParams.height = 500;
+        layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+        layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
         if (mView != null) {
             mWindowManager.removeView(mView);
         }

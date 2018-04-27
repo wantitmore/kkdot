@@ -150,6 +150,9 @@ public class CircleVoiceStateView extends View {
                     }
                 });
                 break;
+            case IDLE:
+                mAnimVal = 0f;
+                invalidate();
             default:
                 invalidate();
                 mValueAnimator = null;
