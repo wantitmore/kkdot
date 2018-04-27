@@ -34,7 +34,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import ee.ioc.phon.android.speechutils.RawAudioRecorder;
 import okio.BufferedSink;
@@ -322,12 +321,12 @@ public class DisplayCardActivity extends BaseActivity {
         public void onReceive(Context context, Intent intent) {
 
             Log.d(TAG, "onReceive: intent is " + intent.getAction() + "--" + ResponseParser.RECOGNIZE_STATE);
-            if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")/* && !ResponseParser.RECOGNIZE_STATE*/) {
+            /*if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.START_VOICE")*//* && !ResponseParser.RECOGNIZE_STATE*//*) {
                 startListening();
             }
             if (Objects.equals(intent.getAction(), "com.konka.android.intent.action.STOP_VOICE")) {
                 stopListening();
-            }
+            }*/
         }
     }
 }

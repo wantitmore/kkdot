@@ -6,18 +6,25 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
 import android.view.WindowManager;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
+import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
+import com.willblaschko.android.alexa.beans.PlayerInfoBean;
+import com.willblaschko.android.alexa.beans.Template1Bean;
+import com.willblaschko.android.alexa.beans.Template2Bean;
+import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
@@ -35,6 +42,11 @@ import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
 import com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView;
+import com.willblaschko.android.alexavoicelibrary.widget.ContentView;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,6 +85,8 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     private CircleVoiceStateView mVoiceStateView;
     WindowManager mWindowManager;
     private AlexaReceiver mAlexaReceiver;
+    List<View> views = new ArrayList<>();
+    private View mView;
 
     public DisplayService() {
         super();
@@ -83,30 +97,33 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate: ---");
         initAlexaAndroid();
         IntentFilter filter = new IntentFilter();
 //        filter.addAction("com.konka.android.intent.action.START_VOICE");
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         mAlexaReceiver = new AlexaReceiver();
         registerReceiver(mAlexaReceiver, filter);
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         alexaManager = AlexaManager.getInstance(this, PRODUCT_ID);
-        createAnFloatWindow(this);
+        createVoiceStateWindow(this);
         startListening();
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy: =================");
         if (mAlexaReceiver != null) {
             unregisterReceiver(mAlexaReceiver);
             mAlexaReceiver = null;
         }
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 
     @Nullable
@@ -119,6 +136,11 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     protected void onHandleIntent(@Nullable Intent intent) {
 
     }*/
+
+    public void setMusicProgressCallBack(MusicProgressCallBack callBack) {
+        mMusicProgressCallBack = callBack;
+    }
+
 
     private void initAlexaAndroid() {
         //get our AlexaManager instance for convenience
@@ -239,6 +261,16 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             //if(BuildConfig.DEBUG)
             if (avsQueue.size() <= 0) {
 //                fadeOutView();
+               /* if (mWindowManager != null) {
+                    if (mView != null) {
+                        mWindowManager.removeViewImmediate(mView);
+                        mView = null;
+                    }
+                    if (mVoiceStateView != null) {
+                        mWindowManager.removeViewImmediate(mVoiceStateView);
+//                        mVoiceStateView = null;
+                    }
+                }*/
             }
         }
 
@@ -554,26 +586,6 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     }
 
 
-    private void createAnFloatWindow(Context context) {
-        if (mVoiceStateView == null) {
-            mVoiceStateView = new CircleVoiceStateView(context);
-            mVoiceStateView.setBackgroundColor(Color.YELLOW);
-            mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-            WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-            layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
-            layoutParams.format = PixelFormat.TRANSLUCENT;
-            layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
-            layoutParams.alpha = 0.8f;
-            layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
-            layoutParams.x = 90;
-            layoutParams.y = 0;
-            layoutParams.width = 140;
-            layoutParams.height = 140;
-
-            mWindowManager.addView(mVoiceStateView, layoutParams);
-        }
-
-    }
 
     @Override
     public AsyncCallback<AvsResponse, Exception> getRequestCallback() {
@@ -645,6 +657,13 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     };
 
+/*    public void fadeOutView() {
+        EventBus.getDefault().post("");
+        Log.d(TAG, "fadeOutView: --");
+//         finish();
+        overridePendingTransition(0, R.animator.out_activity);
+    }*/
+
     private void stopListening() {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
@@ -673,6 +692,92 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             audioPlayer.stop(false);
         }
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handleEvent(Object renderObj) {
+
+        Bundle args = new Bundle();
+
+        if (renderObj instanceof Parcelable) {
+            args.putParcelable("args", (Parcelable) renderObj);
+//            mShowingFragment.setArguments(args);
+            createAnFloatWindow(this, renderObj);
+        }
+    }
+
+    private void createVoiceStateWindow(Context context) {
+        Log.d(TAG, "createVoiceStateWindow: mVoiceStateView " + mVoiceStateView);
+        if (mVoiceStateView == null) {
+            if (mWindowManager == null) {
+                mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            }
+            mVoiceStateView = new CircleVoiceStateView(context);
+//            mVoiceStateView.setBackgroundColor(Color.YELLOW);
+            WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+            layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+            layoutParams.format = PixelFormat.TRANSLUCENT;
+            layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
+            layoutParams.alpha = 0.8f;
+            layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
+            layoutParams.x = 90;
+            layoutParams.y = 0;
+            layoutParams.width = 140;
+            layoutParams.height = 140;
+
+            mWindowManager.addView(mVoiceStateView, layoutParams);
+        }
+    }
+
+
+
+    private void createAnFloatWindow(Context context, Object  renderObj) {
+        if (renderObj == null) {
+            return;
+        }
+        if (mWindowManager == null) {
+            mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        }
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+        layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+        layoutParams.format = PixelFormat.TRANSLUCENT;
+        layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        layoutParams.alpha = 0.8f;
+        layoutParams.gravity = Gravity.START | Gravity.TOP;
+        layoutParams.x = 90;
+        layoutParams.y = 0;
+        layoutParams.width = 300;
+        layoutParams.height = 500;
+        if (mView != null) {
+            mWindowManager.removeView(mView);
+        }
+        ContentView temView = new ContentView();
+        mView = temView.setView(this, renderObj);
+        mWindowManager.addView(mView, layoutParams);
+        if (renderObj instanceof Template1Bean) {
+//            mShowingFragment = Template1Fragment.newInstance();
+            //add a new float window
+        } else if (renderObj instanceof Template2Bean) {
+//            mShowingFragment = Template2Fragment.newInstance();
+
+        } else if (renderObj instanceof WeatherTemplateBean) {
+//            mShowingFragment = WeatherTemplateFragment.newInstance();
+        } else if (renderObj instanceof ListTemplate1Bean) {
+//            mShowingFragment = ListTemplate1Fragment.newInstance();
+        } else if (renderObj instanceof PlayerInfoBean) {
+
+//            if (mShowingFragment instanceof PlayerInfoFragment) {
+//                Log.d(TAG,"just refresh ui,not create new instance");
+//                ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
+//                return;
+//            }
+//
+//            mShowingFragment = PlayerInfoFragment.newInstance();
+        } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
+//            mShowingFragment = EmptyFragment.newInstance();
+        }
+
+    }
+
 
     public class AlexaReceiver extends BroadcastReceiver {
 
