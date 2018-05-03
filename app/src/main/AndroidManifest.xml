@@ -40,18 +40,7 @@
             android:name=".display.DisplayCardActivity"
             android:launchMode="singleTask"
             android:theme="@style/Theme.Transparent">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-
-                <action android:name="android.intent.action.ASSIST" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-
-                <action android:name="com.willblaschko.android.alexavoicelibrary" />
-            </intent-filter>
         </activity>
         <activity android:name=".LoginWebViewActivity">
             <intent-filter>
@@ -85,7 +74,20 @@
                     android:scheme="amzn" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity" />
+        <activity android:name=".LoginActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
+                <action android:name="android.intent.action.ASSIST" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+
+                <action android:name="com.willblaschko.android.alexavoicelibrary" />
+            </intent-filter>
+        </activity>
 
         <receiver
             android:name=".global.VoiceReceiver"
@@ -101,7 +103,8 @@
             android:name=".display.DisplayService"
             android:exported="false" />
 
-        <activity android:name=".display.PlayInfoActivity"></activity>
+        <activity android:name=".display.PlayInfoActivity"
+            android:theme="@style/Theme.Transparent"/>
     </application>
 
 </manifest>

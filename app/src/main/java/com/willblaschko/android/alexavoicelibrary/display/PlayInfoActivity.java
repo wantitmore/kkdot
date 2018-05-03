@@ -3,6 +3,8 @@ package com.willblaschko.android.alexavoicelibrary.display;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.drawable.PictureDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
@@ -15,13 +17,17 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestBuilder;
+import com.willblaschko.android.alexa.GlideApp;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
+import com.willblaschko.android.alexa.utility.svg.SvgSoftwareLayerSetter;
 import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.alexavoicelibrary.utility.TimeFormatUitls;
 
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -30,6 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 
 public class PlayInfoActivity extends AppCompatActivity  implements MusicProgressCallBack{
 
@@ -47,6 +55,8 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
     ImageView mLogoView;
     ImageView mArtView;
     LinearLayout mControlContainer;
+    private String tag;
+    private RequestBuilder<PictureDrawable> requestBuilder;
 
     private DisplayService.DisplayBinder mBinder;
 
@@ -73,11 +83,25 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
         }
     };
     private PlayerInfoBean renderObj;
+    private LinearLayout mControlOnly;
+    private ImageView mLeft;
+    private ImageView mRight;
+    private ImageView mPlay;
+    private LinearLayout mHeadLayout;
+    private LinearLayout mContentLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent displayIntent = getIntent();
+        Bundle bundle = displayIntent.getExtras();
+        if (bundle != null) {
+            Log.d(TAG, "onCreate: ----------->");
+//            setTheme(R.style.AppTheme);
+        }
+//        View view = LayoutInflater.from(this).inflate(R.layout.fragment_player_info, null);
         setContentView(R.layout.fragment_player_info);
+        EventBus.getDefault().register(this);
 
 
         Intent intent = new Intent(this, DisplayService.class);
@@ -85,15 +109,43 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
         bindService(intent, conn, BIND_AUTO_CREATE);
         Log.d(TAG, "onResume: mBinder is " + mBinder);
 
-        Intent displayIntent = getIntent();
-        Bundle bundle = displayIntent.getExtras();
+        initView();
         if (bundle != null) {
+//            view.setBackgroundColor(Color.parseColor("#000000"));
             renderObj = bundle.getParcelable("args");
+            refreshUI(renderObj);
+            mControlOnly.setVisibility(View.GONE);
+            mContentLayout.setVisibility(View.VISIBLE);
+            mHeadLayout.setVisibility(View.VISIBLE);
+            mProgressViewContainer.setVisibility(View.GONE);
+        } else {
+//            view.setBackgroundColor(Color.parseColor("#D9000000"));
+            mControlOnly.setVisibility(View.VISIBLE);
+            mContentLayout.setVisibility(View.GONE);
+            mHeadLayout.setVisibility(View.GONE);
         }
 
-        initView();
+    }
 
-        refreshUI(renderObj);
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mBinder.stop();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        unbindService(conn);
+        EventBus.getDefault().unregister(this);
+        mBinder.release();
+        mBinder.stopService();
+        super.onDestroy();
     }
 
     private void initView() {
@@ -109,46 +161,55 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
         mCurrentTimeView = (TextView) findViewById(R.id.current_time);
         mDurationView = (TextView) findViewById(R.id.duration);
         mProgressViewContainer = (LinearLayout) findViewById(R.id.progress_container);
-        mProgressViewContainer.setVisibility(View.GONE);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onDestroy() {
-        unbindService(conn);
-        super.onDestroy();
+        mControlOnly = (LinearLayout) findViewById(R.id.ll_control_only);
+        mLeft = (ImageView) findViewById(R.id.left);
+        mRight = (ImageView) findViewById(R.id.right);
+        mPlay = (ImageView) findViewById(R.id.play);
+        mHeadLayout = (LinearLayout) findViewById(R.id.ll_header);
+        mContentLayout = (LinearLayout) findViewById(R.id.ll_main_content);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void handleEvent(Object renderObj) {
         if (renderObj instanceof PlayerInfoBean) {
+            Log.d(TAG, "handleEvent: =======");
             refreshUI((PlayerInfoBean) renderObj);
         }
     }
 
     @Override
-    public void onProgressChange(final AvsItem item, final long offsetInMilliseconds, final long duration) {
+    public void onPlaystateChange(){
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDuration = (int) duration;
-                if (item instanceof AvsPlayRemoteItem && mDuration != 0) {
-                    mProgressViewContainer.setVisibility(View.VISIBLE);
-                    mProgressBar.setMax(mDuration);
-                    mProgressBar.setProgress((int) offsetInMilliseconds);
-                    final String strCurrentTime = TimeFormatUitls.formatTime((int) offsetInMilliseconds);
-                    final String strDuration = TimeFormatUitls.formatTime(mDuration);
-                    mCurrentTimeView.setText(strCurrentTime);
-                    mDurationView.setText(strDuration);
-                } else {
-                    mProgressViewContainer.setVisibility(View.GONE);
+                try {
+                    ImageView iv = (ImageView) mControlContainer.findViewWithTag("PLAY_PAUSE");
+                    if (AlexaAudioPlayer.getInstance(PlayInfoActivity.this).isPlaying()) {
+                        iv.setImageResource(R.drawable.play_back_controller_pause);
+                    } else {
+                        iv.setImageResource(R.drawable.play_back_controller_play);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
             }
         });
+    }
+
+    @Override
+    public void onProgressChange(final AvsItem item, final long offsetInMilliseconds, final long duration) {
+            mDuration = (int) duration;
+            if (item instanceof AvsPlayRemoteItem && mDuration != 0) {
+                mProgressViewContainer.setVisibility(View.VISIBLE);
+                mProgressBar.setMax(mDuration);
+                mProgressBar.setProgress((int) offsetInMilliseconds);
+                final String strCurrentTime = TimeFormatUitls.formatTime((int) offsetInMilliseconds);
+                final String strDuration = TimeFormatUitls.formatTime(mDuration);
+                mCurrentTimeView.setText(strCurrentTime);
+                mDurationView.setText(strDuration);
+            } else {
+//                    mProgressViewContainer.setVisibility(View.GONE);
+            }
     }
 
 /*    public void sendPlaybackControllerPauseCommandIssued() {
@@ -221,7 +282,14 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
         mMainTitleView.setText(title);
         mTitleSubtext1.setText(titleSubtext1);
         mTitleSubtext2.setText(titleSubtext2);
-        Glide.with(this).load(logoUrl).into(mLogoView);
+        requestBuilder = GlideApp.with(this)
+                .as(PictureDrawable.class)
+//                .placeholder(R.mipmap.ic_launcher)
+                .error(R.drawable.alexa_logo)
+                .transition(withCrossFade())
+                .listener(new SvgSoftwareLayerSetter());
+        requestBuilder.load(/*logoUrl*/Uri.parse("http://www.clker.com/cliparts/u/Z/2/b/a/6/android-toy-h.svg")).into(mLogoView);
+
         Glide.with(this).load(artUrl).into(mArtView);
         mControlContainer.removeAllViews();
 
@@ -253,12 +321,26 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
                     lp.rightMargin = 30;
                     iv.setTag(name);
                     iv.setFocusable(true);
+                    if (name.equals(tag)) {
+                        Log.d(TAG, "refreshUI: -----");
+                        iv.setFocusableInTouchMode(true);
+                        iv.requestFocus();
+                    }
                     if (!AlexaAudioPlayer.getInstance(this).isPlaying() && ("PLAY_PAUSE".equals(name))) {
                         Log.d(TAG, "refreshUI: -------------not Playing");
                         iv.setImageResource(R.drawable.play_back_controller_pause);
                     } else {
                         iv.setImageResource(resId);
                     }
+                    iv.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(View v, boolean hasFocus) {
+                            if (hasFocus) {
+                                Log.d(TAG, "onFocusChange: focus is " + name);
+                                tag = name;
+                            }
+                        }
+                    });
                     iv.setLayoutParams(lp);
 
                     iv.setOnClickListener(new View.OnClickListener() {

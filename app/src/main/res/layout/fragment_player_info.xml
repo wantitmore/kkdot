@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="#D9000000"
+    android:orientation="vertical"
     android:padding="30dp">
 
     <LinearLayout
+        android:id="@+id/ll_header"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:orientation="horizontal">
@@ -44,11 +47,13 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentRight="true"
-            android:src="@drawable/alexa_logo"/>
+            />
 
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/ll_main_content"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_marginTop="30dp"
@@ -65,7 +70,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="35sp"
                 android:maxLines="2"
-                android:text="Title"/>
+                />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -161,6 +166,33 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|bottom"
             android:src="@drawable/alexa_logo"/>
+        <LinearLayout
+            android:id="@+id/ll_control_only"
+            android:orientation="horizontal"
+            android:layout_width="341dp"
+            android:layout_height="152dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:background="#ff0">
+
+            <ImageView
+                android:id="@+id/left"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/play_back_controller_previous"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <ImageView
+                android:id="@+id/play"
+                android:layout_marginEnd="20dp"
+                android:src="@drawable/play_back_controller_pause"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <ImageView
+                android:id="@+id/right"
+                android:src="@drawable/play_back_controller_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
 
     </FrameLayout>
 

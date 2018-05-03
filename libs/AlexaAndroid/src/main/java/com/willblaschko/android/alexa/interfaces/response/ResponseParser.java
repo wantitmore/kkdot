@@ -1,5 +1,6 @@
 package com.willblaschko.android.alexa.interfaces.response;
 
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -54,9 +55,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import okhttp3.Headers;
-import okhttp3.Response;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
 
 import static okhttp3.internal.Util.UTF_8;
 
@@ -162,38 +163,51 @@ public class ResponseParser {
                     }
                 } else {
                     // get the json directive
-                    String directive = data.toString(Charset.defaultCharset().displayName());
-                    boolean isCardData = isCard(directive);
-                    Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
-                    JSONObject jsonObject = null;
                     try {
-                        jsonObject = new JSONObject(directive);
-                        String nameSpace = jsonObject.getJSONObject("directive").getJSONObject("header").getString("namespace");
-                        Log.d(TAG, "parseResponse: nameSpace is " + nameSpace);
-                        if ("SpeechRecognizer".equals(nameSpace)) {
-                            RECOGNIZE_STATE = true;
-                        } else {
-                            RECOGNIZE_STATE = false;
-                        }
-                        if (isCardData) {
-                            Class targetClazz;
-                            String headName = jsonObject.getJSONObject("directive").getJSONObject("header").getString("name");
-                            targetClazz = mRenderTypeMap.get(headName);
-                            if (targetClazz == null) {
-                                String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
-                                targetClazz = mRenderTypeMap.get(renderType);
+                        String directive = data.toString(Charset.defaultCharset().displayName());
+                        boolean isCardData = isCard(directive);
+                        Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
+                        JSONObject jsonObject;
+
+                            jsonObject = new JSONObject(directive);
+                            final String nameSpace = jsonObject.getJSONObject("directive").getJSONObject("header").getString("namespace");
+                            if ("AudioPlayer".equals(nameSpace)) {
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        SystemClock.sleep(2000);
+                                        Log.d(TAG, "onTick: ----------------======== " + nameSpace);
+                                        if (!"TemplateRuntime".equals(nameSpace)) {
+                                            EventBus.getDefault().post("Controls-Only");
+                                        }
+                                    }
+                                }).start();
                             }
-                            Gson gson = new Gson();
-                            Object renderObj = gson.fromJson(directive, targetClazz);
-                            EventBus.getDefault().post(renderObj);
-                    } else if (!"AudioPlayer".equals(nameSpace)) {
-                        //EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
-                    }
+                            Log.d(TAG, "parseResponse: nameSpace is " + nameSpace);
+                            if ("SpeechRecognizer".equals(nameSpace)) {
+                                RECOGNIZE_STATE = true;
+                            } else {
+                                RECOGNIZE_STATE = false;
+                            }
+                            if (isCardData) {
+                                Class targetClazz;
+                                String headName = jsonObject.getJSONObject("directive").getJSONObject("header").getString("name");
+                                targetClazz = mRenderTypeMap.get(headName);
+                                if (targetClazz == null) {
+                                    String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
+                                    targetClazz = mRenderTypeMap.get(renderType);
+                                }
+                                Gson gson = new Gson();
+                                Object renderObj = gson.fromJson(directive, targetClazz);
+                                EventBus.getDefault().post(renderObj);
+                        } else if (!"AudioPlayer".equals(nameSpace)) {
+                            //EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
+                        }
+                        directives.add(getDirective(directive));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
 
-                    directives.add(getDirective(directive));
                 }
                 count++;
             }

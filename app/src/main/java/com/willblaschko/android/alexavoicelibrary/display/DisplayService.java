@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Binder;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -21,11 +23,7 @@ import android.view.WindowManager;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
-import com.willblaschko.android.alexa.beans.ListTemplate1Bean;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
-import com.willblaschko.android.alexa.beans.Template1Bean;
-import com.willblaschko.android.alexa.beans.Template2Bean;
-import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
@@ -67,7 +65,7 @@ import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUC
  * <p>
  * TODO: Customize class - update intent actions and extra parameters.
  */
-public class DisplayService extends Service implements BaseListenerFragment.AvsListenerInterface, MusicProgressCallBack {
+public class DisplayService extends Service implements BaseListenerFragment.AvsListenerInterface {
 
     private static final String TAG = "DisplayService";
     private static final int AUDIO_RATE = 16000;
@@ -144,10 +142,6 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         return mBinder;
     }
 
-    @Override
-    public void onProgressChange(AvsItem item, long offsetInMilliseconds, long duration) {
-
-    }
 
     class DisplayBinder extends Binder {
 
@@ -169,6 +163,24 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
         public void sendPlaybackControllerPlayCommandIssued() {
             service.sendPlaybackControllerPlayCommandIssued();
+        }
+
+        public void stop() {
+            if (audioPlayer != null) {
+                audioPlayer.stop();
+            }
+        }
+
+        public void release() {
+            if (audioPlayer != null) {
+                //remove callback to avoid memory leaks
+                audioPlayer.removeCallback(alexaAudioPlayerCallback);
+                audioPlayer.release();
+            }
+        }
+
+        public void stopService() {
+            stopSelf();
         }
     }
 
@@ -298,18 +310,17 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
             checkQueue();
 
-            //if(BuildConfig.DEBUG)
-            if (avsQueue.size() <= 0) {
-//                fadeOutView();
-                if (mWindowManager != null) {
-                    if (mView != null) {
-                        mWindowManager.removeViewImmediate(mView);
-                        mView = null;
-                    }
-                   /* if (mVoiceStateView != null) {
-                        mWindowManager.removeViewImmediate(mVoiceStateView);
-//                        mVoiceStateView = null;
-                    }*/
+            if (mWindowManager != null) {
+                if ((avsQueue.size() <= 0
+                        || TextUtils.equals("com.willblaschko.android.alexavoicelibrary.display.PlayInfoActivity", CommonUtil.getTopActivity(DisplayService.this)))
+                        &&  mVoiceStateView != null) {
+//                    mWindowManager.removeViewImmediate(mVoiceStateView);
+                    mVoiceStateView.setVisibility(View.GONE);
+                }
+                if (mView != null) {
+                    Log.d(TAG, "itemComplete: remove view");
+                    mWindowManager.removeViewImmediate(mView);
+                    mView = null;
                 }
             }
         }
@@ -532,6 +543,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             Log.d(TAG,"audio player stop");
             audioPlayer.stop();
             sendPlaybackStopEvent();
+            if (mMusicProgressCallBack != null) {
+                mMusicProgressCallBack.onPlaystateChange();
+            }
             avsQueue.remove(current);
         } else if (current instanceof AvsExpectSpeechItem) {
             startListening();
@@ -593,24 +607,29 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     protected void stateListening() {
         Log.d(TAG, "------------> stateListening");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.ACTIVE_LISTENING);
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.ACTIVE_LISTENING);
+        }
     }
 
     protected void stateProcessing() {
         Log.d(TAG, "------------> stateProcessing");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.THINKING);
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.THINKING);
+        }
     }
 
     protected void stateSpeaking() {
         Log.d(TAG, "------------> stateSpeaking");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SPEAKING);
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SPEAKING);
+        }
     }
 
     protected void stateFinished() {
         Log.d(TAG, "------------> stateFinished");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
         if (mVoiceStateView !=null) {
-//            mVoiceStateView.setVisibility(View.INVISIBLE);
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
         }
     }
 
@@ -620,12 +639,16 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     protected void stateNone() {
         Log.d(TAG, "------------> stateNone");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.IDLE);
+        }
     }
 
     protected void  stateError(){
         Log.d(TAG, "------------> stateError");
-        mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SYSTEM_ERR);
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SYSTEM_ERR);
+        }
     }
 
 
@@ -640,6 +663,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
         if (recorder == null) {
+            if (mVoiceStateView == null) {
+                createVoiceStateWindow(this);
+            }
             mVoiceStateView.setCurrentState(CircleVoiceStateView.State.LISTENING);
             Log.d(TAG, "startListening: recorder = null");
             recorder = new RawAudioRecorder(AUDIO_RATE);
@@ -752,7 +778,13 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             intent.putExtras(bundle);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            mVoiceStateView.setVisibility(View.GONE);
             return;
+        } else if (renderObj instanceof String && TextUtils.equals((String)renderObj, "Controls-Only")) {
+            Intent intent = new Intent(this, PlayInfoActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            mVoiceStateView.setVisibility(View.GONE);
         }
         if (renderObj instanceof Parcelable) {
             createContentFloatWindow(this, renderObj);
@@ -761,26 +793,22 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     private void createVoiceStateWindow(Context context) {
         Log.d(TAG, "createVoiceStateWindow: mVoiceStateView " + mVoiceStateView);
-        if (mVoiceStateView == null) {
-            if (mWindowManager == null) {
-                mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-            }
-            mVoiceStateView = new CircleVoiceStateView(context);
-            WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-            layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
-            layoutParams.format = PixelFormat.TRANSLUCENT;
-            layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
-            layoutParams.alpha = 0.8f;
-            layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
-            layoutParams.x = 90;
-            layoutParams.y = 0;
-            layoutParams.width = 220;
-            layoutParams.height = 220;
-
-            mWindowManager.addView(mVoiceStateView, layoutParams);
-        } else {
-            mVoiceStateView.setVisibility(View.VISIBLE);
+        if (mWindowManager == null) {
+            mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         }
+        mVoiceStateView = new CircleVoiceStateView(context);
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+        layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        layoutParams.format = PixelFormat.TRANSLUCENT;
+        layoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        layoutParams.alpha = 0.8f;
+        layoutParams.gravity = Gravity.END | Gravity.BOTTOM;
+        layoutParams.x = 90;
+        layoutParams.y = 0;
+        layoutParams.width = 220;
+        layoutParams.height = 220;
+
+        mWindowManager.addView(mVoiceStateView, layoutParams);
     }
 
 
@@ -805,33 +833,21 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         layoutParams.y = 0;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+        layoutParams.windowAnimations = android.R.style.Animation_Translucent;
         if (mView != null) {
             mWindowManager.removeView(mView);
+            mView = null;
         }
         ContentView temView = new ContentView();
         mView = temView.setView(this, renderObj);
         mWindowManager.addView(mView, layoutParams);
-        if (renderObj instanceof Template1Bean) {
-//            mShowingFragment = Template1Fragment.newInstance();
-            //add a new float window
-        } else if (renderObj instanceof Template2Bean) {
-//            mShowingFragment = Template2Fragment.newInstance();
-
-        } else if (renderObj instanceof WeatherTemplateBean) {
-//            mShowingFragment = WeatherTemplateFragment.newInstance();
-        } else if (renderObj instanceof ListTemplate1Bean) {
-//            mShowingFragment = ListTemplate1Fragment.newInstance();
-        } else if (renderObj instanceof PlayerInfoBean) {
-
-//            if (mShowingFragment instanceof PlayerInfoFragment) {
-//                Log.d(TAG,"just refresh ui,not create new instance");
-//                ((PlayerInfoFragment) mShowingFragment).refreshUI((PlayerInfoBean) renderObj);
-//                return;
-//            }
-
-//            mShowingFragment = PlayerInfoFragment.newInstance();
-        } else if (!renderObj.equals("SpeakEnd") && (!renderObj.equals("SpeakStart"))) {
-//            mShowingFragment = EmptyFragment.newInstance();
+        //remove voice state view when content view appear
+        if (mVoiceStateView != null) {
+            Log.d(TAG, "createContentFloatWindow: --");
+            mWindowManager.removeViewImmediate(mVoiceStateView);
+            mVoiceStateView.setAlpha(0);
+            mVoiceStateView.setBackgroundColor(Color.YELLOW);
+            mVoiceStateView = null;
         }
 
     }

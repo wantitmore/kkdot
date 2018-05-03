@@ -19,9 +19,9 @@ public class CommonUtil {
 
         List<ActivityManager.RunningTaskInfo> runningTaskInfos = manager.getRunningTasks(1) ;
 
-        if(runningTaskInfos != null)
+        if(runningTaskInfos != null && runningTaskInfos.size() > 0)
 
-            return (runningTaskInfos.get(0).topActivity).toString() ;
+            return (runningTaskInfos.get(0).topActivity.getClassName()) ;
 
         else
 

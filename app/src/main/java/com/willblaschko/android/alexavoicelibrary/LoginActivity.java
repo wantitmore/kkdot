@@ -3,6 +3,7 @@ package com.willblaschko.android.alexavoicelibrary;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -18,7 +19,7 @@ import com.willblaschko.android.alexa.AuthorizationManager;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.callbacks.AuthorizationCallback;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
-import com.willblaschko.android.alexavoicelibrary.display.DisplayCardActivity;
+import com.willblaschko.android.alexavoicelibrary.display.DisplayService;
 import com.willblaschko.android.alexavoicelibrary.global.Constants;
 
 import org.greenrobot.eventbus.EventBus;
@@ -45,6 +46,15 @@ public class LoginActivity extends Activity implements View.OnClickListener{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharedPreferences alexa = getSharedPreferences(Constants.ALEXA, MODE_PRIVATE);
+        boolean needLogin = alexa.getBoolean(Constants.LOGIN, true);
+        Log.d(TAG, "onCreate: needLogin " + needLogin);
+        if (!needLogin) {
+            // show education login UI
+//            startActivity(new Intent(this, LoginActivity.class));
+            startService(new Intent(this, DisplayService.class));
+            finish();
+        }
         setContentView(R.layout.activity_login2);
         initView();
         initListener();
@@ -125,7 +135,8 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 finish();
                 break;
             case R.id.btn_done:
-                startActivity(new Intent(this, DisplayCardActivity.class));
+//                startActivity(new Intent(this, DisplayCardActivity.class));
+                startService(new Intent(this, DisplayService.class));
                 finish();
                 break;
         }

@@ -437,6 +437,7 @@ public abstract class BaseActivity extends AppCompatActivity implements BaseList
             Log.d(TAG,"audio player stop");
             audioPlayer.stop();
             sendPlaybackStopEvent();
+            mMusicProgressCallBack.onPlaystateChange();
             avsQueue.remove(current);
         } else if (current instanceof AvsExpectSpeechItem) {
             mOnnStateListener.startListening();

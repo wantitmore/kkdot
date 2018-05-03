@@ -46,6 +46,7 @@ ext {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.intellij:annotations:+@jar'
     compile 'com.google.code.gson:gson:2.7'
     compile 'commons-io:commons-io:2.5'
@@ -56,12 +57,14 @@ dependencies {
     compile 'com.google.android.gms:play-services-base:8.1.0'
     testCompile 'junit:junit:4.12'
     compile files('libs/mstar.jar')
-    compile 'com.github.bumptech.glide:glide:3.7.0'
+    compile 'com.github.bumptech.glide:glide:4.0.0-RC0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.0.0-RC0'
     compile 'com.orhanobut:logger:2.1.1'
     implementation 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.liulishuo.filedownloader:library:1.6.4'
     compile 'org.litepal.android:core:1.6.0'
     compile 'com.alibaba:fastjson:1.2.46'
+    implementation files('libs/androidsvg-1.2.0.jar')
 }
 
 android {

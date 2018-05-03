@@ -108,6 +108,25 @@ public class PlayerInfoFragment extends Fragment implements MusicProgressCallBac
         });
     }
 
+    @Override
+    public void onPlaystateChange(){
+        mActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ImageView iv = (ImageView) mControlContainer.findViewWithTag("PLAY_PAUSE");
+                    if (AlexaAudioPlayer.getInstance(getActivity()).isPlaying()) {
+                        iv.setImageResource(R.drawable.play_back_controller_pause);
+                    } else {
+                        iv.setImageResource(R.drawable.play_back_controller_play);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     public void refreshUI(PlayerInfoBean renderObj){
 
         PlayerInfoBean.DirectiveBean.PayloadBean payloadBean = renderObj.getDirective().getPayload();
