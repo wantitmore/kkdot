@@ -23,6 +23,9 @@ import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaNextCom
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPauseCommandItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPlayCommandItem;
 import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsMediaPreviousCommandItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceAllItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsReplaceEnqueuedItem;
+import com.willblaschko.android.alexa.interfaces.playbackcontrol.AvsStopItem;
 import com.willblaschko.android.alexa.interfaces.response.ResponseParser;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsAdjustVolumeItem;
 import com.willblaschko.android.alexa.interfaces.speaker.AvsSetMuteItem;
@@ -58,7 +61,7 @@ public class AndroidSystemHandler {
         }
         return instance;
     }
-    public void handleItems(@NonNull AvsResponse response){
+    public void handleItems(@NonNull AvsResponse response, boolean fromDowmChannel){
         for(AvsItem current: response){
 
             Log.i(TAG, "Handling AvsItem: " + current.getClass());
@@ -100,6 +103,9 @@ public class AndroidSystemHandler {
             }else if (current instanceof AvsDeleteAlertItem){
                 Log.d(TAG, "handleItems: ---deleteAlert");
                 deleteAlert(current);
+            } else if (current instanceof AvsStopItem && fromDowmChannel) {
+                Log.d(TAG, "handleItems: stop music");
+                mOnAudioPlayerListener.stop();
             }
         }
     }
@@ -121,21 +127,26 @@ public class AndroidSystemHandler {
     }
 
 
-    public void handleDirective(Directive directive){
+    public AvsResponse handleDirective(Directive directive){
         try {
+            AvsResponse response = new AvsResponse();
             AvsItem item = ResponseParser.parseDirective(directive);
-            handleItem(item);
+            if(directive.isPlayBehaviorReplaceAll()){
+                response.add(0, new AvsReplaceAllItem(directive.getPayload().getToken()));
+            }
+            if(directive.isPlayBehaviorReplaceEnqueued()){
+                response.add(new AvsReplaceEnqueuedItem(directive.getPayload().getToken()));
+            }
+            if(item == null){
+                return null;
+            }
+            response.add(item);
+            handleItems(response, true);
+            return response;
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    public void handleItem(AvsItem item){
-        if(item == null){
-            return;
-        }
-        AvsResponse response = new AvsResponse();
-        response.add(item);
-        handleItems(response);
+        return null;
     }
 
     public long getVolume(){
@@ -150,40 +161,6 @@ public class AndroidSystemHandler {
         return mute;
     }
 
-
-    private void setTimer(final AvsSetAlertItem item){
-        /*try {
-            int time = (int) ((item.getScheduledTimeMillis() - System.currentTimeMillis()) / 1000);
-            Log.d(TAG, "setTimer: time is " + time);
-            Intent alarmas = new Intent(AlarmClock.ACTION_SET_TIMER);
-            alarmas.putExtra(AlarmClock.EXTRA_LENGTH, time);
-            alarmas.putExtra(AlarmClock.EXTRA_SKIP_UI, true);
-            alarmas.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(alarmas);
-            AlexaManager.getInstance(context)
-                    .sendEvent(Event.getSetAlertSucceededEvent(item.getToken()), null);
-
-            //cheating way to tell Alexa that the timer happened successfully--this SHOULD be improved
-            //todo make this better
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    AlexaManager.getInstance(context)
-                            .sendEvent(Event.getAlertStartedEvent(item.getToken()), new ImplAsyncCallback<AvsResponse, Exception>() {
-                                @Override
-                                public void complete() {
-                                    AlexaManager.getInstance(context)
-                                            .sendEvent(Event.getAlertStoppedEvent(item.getToken()), null);
-                                }
-                            });
-                }
-            }, time * 1000);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }*/
-
-
-    }
     private void setAlarm(AvsSetAlertItem item){
         Log.d(TAG, "setAlarm: ==========");
 
@@ -279,5 +256,14 @@ public class AndroidSystemHandler {
         Toast.makeText(context, "intent is " + mainTitle, Toast.LENGTH_SHORT).show();
         Looper.loop();*/
         ResponseParser.kkDirective = null;
+    }
+
+    private OnAudioPlayerListener mOnAudioPlayerListener;
+    public void setmOnAudioPlayerListener(OnAudioPlayerListener onAudioPlayerListener) {
+        mOnAudioPlayerListener = onAudioPlayerListener;
+    }
+
+    public interface OnAudioPlayerListener {
+        void stop();
     }
 }

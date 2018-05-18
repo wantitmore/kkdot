@@ -45,7 +45,7 @@ public class ResetAlertService extends IntentService {
                 String token = alertBean.getToken();
                 String scheduledTime = alertBean.getScheduledTime();
                 long alertTime = TimeUtil.getAlertTime(scheduledTime);
-                long elapsedTime = alertTime - System.currentTimeMillis();
+                long elapsedTime = System.currentTimeMillis() - alertTime;
 
                 Log.d(TAG, "onHandleIntent: elap is " + elapsedTime + ", alertTIme is " + scheduledTime + ", restartTime is " + System.currentTimeMillis());
                 if (elapsedTime > ELAPSE_TIME) {
@@ -77,6 +77,10 @@ public class ResetAlertService extends IntentService {
 
                     AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
                     am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+                } else {
+                    Intent alertIntent = new Intent(this, AlertHandlerService.class);
+                    alertIntent.putExtra("id", id);
+                    startService(alertIntent);
                 }
             } catch (Exception e) {
                 Log.d("ResetAlertService", "onStartCommand: error occur: " + e.getMessage());

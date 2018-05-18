@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.SweepGradient;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
@@ -17,7 +18,7 @@ import com.willblaschko.android.alexavoicelibrary.R;
 
 
 public class CircleVoiceStateView extends View {
-
+    private final static  String TAG = "CircleVoiceStateView";
     private final static int COLOR_CYAN = Color.CYAN;
     private final static int COLOR_BLUE = Color.BLUE;
     private final static int COLOR_RED = Color.RED;
@@ -80,6 +81,7 @@ public class CircleVoiceStateView extends View {
         mCurrentState = state;
         stopAnim();
         setupAnimation();
+        Log.d(TAG,"setCurrentState:"+mCurrentState+","+mValueAnimator);
         if (mValueAnimator != null) {
             mValueAnimator.start();
         }
@@ -90,6 +92,7 @@ public class CircleVoiceStateView extends View {
     }
 
     private void setupAnimation() {
+        Log.d(TAG,"setupAnimation:"+mCurrentState);
         switch (mCurrentState) {
             case LISTENING:
                 mAnimVal = 0.33F;
@@ -152,7 +155,9 @@ public class CircleVoiceStateView extends View {
                 break;
             case IDLE:
                 mAnimVal = 0f;
+                mValueAnimator = null;
                 invalidate();
+                break;
             default:
                 invalidate();
                 mValueAnimator = null;
@@ -163,15 +168,18 @@ public class CircleVoiceStateView extends View {
 
     public void stopAnim() {
         if (mValueAnimator != null) {
+            Log.d(TAG,"stopAnim");
             mValueAnimator.cancel();
+            mValueAnimator.removeAllUpdateListeners();
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        if(mCurrentState != State.IDLE) {
         canvas.drawBitmap(mIcon, mCenterX - mIcon.getWidth() / 2, mCenterY - mIcon.getHeight() / 2, null);
+        }
 
         switch (mCurrentState) {
             case LISTENING:

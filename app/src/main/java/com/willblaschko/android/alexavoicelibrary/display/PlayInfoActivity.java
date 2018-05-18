@@ -3,11 +3,12 @@ package com.willblaschko.android.alexavoicelibrary.display;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.graphics.drawable.PictureDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,7 @@ import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.audioplayer.AvsPlayRemoteItem;
+import com.willblaschko.android.alexa.system.AndroidSystemHandler;
 import com.willblaschko.android.alexa.utility.svg.SvgSoftwareLayerSetter;
 import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.alexavoicelibrary.utility.TimeFormatUitls;
@@ -47,6 +49,7 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
     private TextView mDurationView;
     private TextView mCurrentTimeView;
     private LinearLayout mProgressViewContainer;
+    private Boolean mAcceptEventBusEvent;
     TextView mMainHeaderView;
     TextView mHeaderSubtext;
     TextView mMainTitleView;
@@ -89,29 +92,28 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
     private ImageView mPlay;
     private LinearLayout mHeadLayout;
     private LinearLayout mContentLayout;
+    private LinearLayout mPlayInfo;
+    private AlexaAudioPlayer mAudioPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent displayIntent = getIntent();
         Bundle bundle = displayIntent.getExtras();
-        if (bundle != null) {
-            Log.d(TAG, "onCreate: ----------->");
-//            setTheme(R.style.AppTheme);
-        }
-//        View view = LayoutInflater.from(this).inflate(R.layout.fragment_player_info, null);
         setContentView(R.layout.fragment_player_info);
         EventBus.getDefault().register(this);
+        mAudioPlayer = AlexaAudioPlayer.getInstance(this);
 
 
         Intent intent = new Intent(this, DisplayService.class);
         intent.putExtra("PlayTag", true);
         bindService(intent, conn, BIND_AUTO_CREATE);
-        Log.d(TAG, "onResume: mBinder is " + mBinder);
+        Log.d(TAG, "onCreate: mBinder is " + mBinder);
 
         initView();
+        initListener();
         if (bundle != null) {
-//            view.setBackgroundColor(Color.parseColor("#000000"));
+            mPlayInfo.setBackgroundColor(Color.parseColor("#000000"));
             renderObj = bundle.getParcelable("args");
             refreshUI(renderObj);
             mControlOnly.setVisibility(View.GONE);
@@ -119,19 +121,30 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
             mHeadLayout.setVisibility(View.VISIBLE);
             mProgressViewContainer.setVisibility(View.GONE);
         } else {
-//            view.setBackgroundColor(Color.parseColor("#D9000000"));
             mControlOnly.setVisibility(View.VISIBLE);
             mContentLayout.setVisibility(View.GONE);
             mHeadLayout.setVisibility(View.GONE);
+            mPlay.setTag("PLAY_PAUSE");
         }
 
     }
 
     @Override
     protected void onResume() {
+        Log.i(TAG,"onResume");
+        mAcceptEventBusEvent = true;
         super.onResume();
     }
 
+    @Override
+    protected void onPause(){
+        Log.i(TAG,"onPause");
+        if (mBinder != null) {
+            mBinder.setAcceptEventBusEvent(false);
+        }
+        mAcceptEventBusEvent = false;
+        super.onPause();
+    }
     @Override
     protected void onStop() {
         super.onStop();
@@ -141,6 +154,7 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
 
     @Override
     protected void onDestroy() {
+        Log.i(TAG,"onDestroy");
         unbindService(conn);
         EventBus.getDefault().unregister(this);
         mBinder.release();
@@ -148,7 +162,46 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
         super.onDestroy();
     }
 
+
+    private void initListener() {
+        mLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: click left");
+                mBinder.sendPlaybackControllerPreviousCommandIssued();
+            }
+        });
+        mRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: click right");
+                mBinder.sendPlaybackControllerNextCommandIssued();
+            }
+        });
+        mPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: click play");
+                playControl(mPlay);
+            }
+        });
+        AndroidSystemHandler.getInstance(this).setmOnAudioPlayerListener(new AndroidSystemHandler.OnAudioPlayerListener() {
+            @Override
+            public void stop() {
+                Log.d(TAG, "stop AudioPlayer from cloud");
+                if(mAudioPlayer.isPlaying()){
+                    if(mAudioPlayer.getCurrentItem() instanceof AvsPlayRemoteItem){
+                        ((AvsPlayRemoteItem) mAudioPlayer.getCurrentItem()).SetNeedResumed(true);
+                        mBinder.sendPlaybackStopEvent();
+                        mAudioPlayer.stop();
+                    }
+                }
+            }
+        });
+    }
+
     private void initView() {
+        mPlayInfo = (LinearLayout) findViewById(R.id.ll_play_info);
         mMainHeaderView = (TextView) findViewById(R.id.main_header);
         mHeaderSubtext = (TextView) findViewById(R.id.sub_header);
         mMainTitleView = (TextView) findViewById(R.id.main_title);
@@ -171,9 +224,24 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void handleEvent(Object renderObj) {
+        if(!mAcceptEventBusEvent){
+            return;
+        }
+
         if (renderObj instanceof PlayerInfoBean) {
-            Log.d(TAG, "handleEvent: =======");
+            mPlayInfo.setBackgroundColor(Color.parseColor("#000000"));
+            mControlOnly.setVisibility(View.GONE);
+            mHeadLayout.setVisibility(View.VISIBLE);
+            mContentLayout.setVisibility(View.VISIBLE);
             refreshUI((PlayerInfoBean) renderObj);
+        } else if (renderObj instanceof String && TextUtils.equals((String)renderObj, "Controls-Only")) {
+            Log.d(TAG, "handleEvent: Controls-Only");
+            mPlay.setTag("PLAY_PAUSE");
+            mPlay.setImageResource(R.drawable.play_back_controller_pause);
+            mPlayInfo.setBackgroundColor(Color.parseColor("#D9000000"));
+            mControlOnly.setVisibility(View.VISIBLE);
+            mHeadLayout.setVisibility(View.GONE);
+            mContentLayout.setVisibility(View.GONE);
         }
     }
 
@@ -183,7 +251,14 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
             @Override
             public void run() {
                 try {
-                    ImageView iv = (ImageView) mControlContainer.findViewWithTag("PLAY_PAUSE");
+
+                    ImageView iv;
+                    if (!(mControlOnly.getVisibility() == View.VISIBLE)) {
+                        iv = (ImageView) mControlContainer.findViewWithTag("PLAY_PAUSE");
+                    } else {
+                        iv = mPlay;
+                    }
+
                     if (AlexaAudioPlayer.getInstance(PlayInfoActivity.this).isPlaying()) {
                         iv.setImageResource(R.drawable.play_back_controller_pause);
                     } else {
@@ -198,18 +273,23 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
 
     @Override
     public void onProgressChange(final AvsItem item, final long offsetInMilliseconds, final long duration) {
-            mDuration = (int) duration;
-            if (item instanceof AvsPlayRemoteItem && mDuration != 0) {
-                mProgressViewContainer.setVisibility(View.VISIBLE);
-                mProgressBar.setMax(mDuration);
-                mProgressBar.setProgress((int) offsetInMilliseconds);
-                final String strCurrentTime = TimeFormatUitls.formatTime((int) offsetInMilliseconds);
-                final String strDuration = TimeFormatUitls.formatTime(mDuration);
-                mCurrentTimeView.setText(strCurrentTime);
-                mDurationView.setText(strDuration);
-            } else {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDuration = (int) duration;
+                if (item instanceof AvsPlayRemoteItem && mDuration != 0) {
+                    mProgressViewContainer.setVisibility(View.VISIBLE);
+                    mProgressBar.setMax(mDuration);
+                    mProgressBar.setProgress((int) offsetInMilliseconds);
+                    final String strCurrentTime = TimeFormatUitls.formatTime((int) offsetInMilliseconds);
+                    final String strDuration = TimeFormatUitls.formatTime(mDuration);
+                    mCurrentTimeView.setText(strCurrentTime);
+                    mDurationView.setText(strDuration);
+                } else {
 //                    mProgressViewContainer.setVisibility(View.GONE);
+                }
             }
+        });
     }
 
 /*    public void sendPlaybackControllerPauseCommandIssued() {
@@ -288,7 +368,7 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
                 .error(R.drawable.alexa_logo)
                 .transition(withCrossFade())
                 .listener(new SvgSoftwareLayerSetter());
-        requestBuilder.load(/*logoUrl*/Uri.parse("http://www.clker.com/cliparts/u/Z/2/b/a/6/android-toy-h.svg")).into(mLogoView);
+        requestBuilder.load(logoUrl).into(mLogoView);
 
         Glide.with(this).load(artUrl).into(mArtView);
         mControlContainer.removeAllViews();

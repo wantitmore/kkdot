@@ -3,10 +3,12 @@ package com.willblaschko.android.alexavoicelibrary.global;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.WindowManager;
 
 import com.willblaschko.android.alexa.beans.AlertBean;
+import com.willblaschko.android.alexavoicelibrary.LoginActivity;
 import com.willblaschko.android.alexavoicelibrary.display.DisplayService;
 import com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView;
 
@@ -28,11 +30,17 @@ public class VoiceReceiver extends BroadcastReceiver {
         // an Intent broadcast.
         if (VOICE_START.equals(intent.getAction())) {
             Log.d(TAG, "onReceive: VOICE_START");
-            /*Intent voiceIntent = new Intent(context, DisplayCardActivity.class);
-            voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(voiceIntent);*/
+            SharedPreferences alexa = context.getSharedPreferences(Constants.ALEXA, Context.MODE_PRIVATE);
+            boolean needLogin = alexa.getBoolean(Constants.LOGIN, true);
+            if (needLogin) {
+                Intent voiceIntent = new Intent(context, LoginActivity.class);
+                voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                voiceIntent.putExtra("fromVoiceReceiver", true);
+                context.startActivity(voiceIntent);
+            } else {
+                context.startService(new Intent(context, DisplayService.class));
+            }
 
-            context.startService(new Intent(context, DisplayService.class));
 
         } else if (VOICE_STOP.equals(intent.getAction())) {
             Log.d(TAG, "onReceive: VOICE_STOP");

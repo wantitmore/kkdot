@@ -6,12 +6,10 @@ import android.support.annotation.RawRes;
 import android.support.v4.app.Fragment;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
-import com.willblaschko.android.alexavoicelibrary.R;
 
 import static com.willblaschko.android.alexavoicelibrary.global.Constants.PRODUCT_ID;
 
@@ -55,16 +53,7 @@ public abstract class BaseListenerFragment extends Fragment {
 
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.view_code:
-                DisplayCodeFragment fragment = DisplayCodeFragment.getInstance(/*getTitle(), */getRawCode());
-                loadFragment(fragment);
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+
 
     public abstract void startListening();
 //    protected abstract String getTitle();
@@ -75,9 +64,4 @@ public abstract class BaseListenerFragment extends Fragment {
         AsyncCallback<AvsResponse, Exception> getRequestCallback();
     }
 
-    protected void loadFragment(Fragment fragment){
-        if(getActivity() != null && getActivity() instanceof ActionsFragment.ActionFragmentInterface){
-            ((ActionsFragment.ActionFragmentInterface) getActivity()).loadFragment(fragment, true);
-        }
-    }
 }

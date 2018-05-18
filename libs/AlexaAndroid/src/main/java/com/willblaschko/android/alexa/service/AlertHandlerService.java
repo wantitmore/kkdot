@@ -42,6 +42,7 @@ public class AlertHandlerService extends Service {
     private static final long SECOND_INTERVAL = 1000;
     private static final long LASTING_RING_TIME = 60 * 60 * 1000;
     private static final int START_POSITION = 0;
+    public static boolean isRinging = false;
 
     private String mToken;
     private String mType;
@@ -82,7 +83,7 @@ public class AlertHandlerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             boolean active = intent.getBooleanExtra("active", false);
-            if (active) {
+            if (active) {//cancelAlertTask
                 stopPlayer();
             } else {
                 getData(intent);
@@ -219,6 +220,10 @@ public class AlertHandlerService extends Service {
                         unSendBean.setType("AlertStarted");
                         unSendBean.save();
                     }
+
+                    Intent intent = new Intent();
+                    intent.setAction("com.konka.alexa.alertStart");
+                    sendBroadcast(intent);
                 }
             }
         });

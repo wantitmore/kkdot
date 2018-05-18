@@ -210,6 +210,8 @@ public class AlexaAudioPlayer {
                 e.printStackTrace();
                 //bubble up our error
                 bubbleUpError(e);
+            } catch (Exception e) {
+                Log.e(TAG, "play: error is " + e.getMessage());
             }
         } else if (mItem instanceof AvsPlayContentItem) {
             //cast our item for easy access
@@ -300,12 +302,13 @@ public class AlexaAudioPlayer {
                 ((AvsSpeakItem) mItem).setPlayerActivity(AvsSpeakItem.PLAYER_ACTIVITY_FINISHED);
             }
         }
-        for (Callback callback : mCallbacks) {
-            callback.playerStop();
-        }
 
         getMediaPlayer().stop();
-    }
+
+        for (Callback callback : mCallbacks) {
+            callback.playerStop();
+        } 
+   }
     public int getCurrentPosition()       { return getMediaPlayer().getCurrentPosition();}
 
     /**
@@ -404,6 +407,9 @@ public class AlexaAudioPlayer {
     private MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         @Override
         public void onPrepared(MediaPlayer mp) {
+            if (mMediaPlayer == null) {
+                return;
+            }
             for (Callback callback : mCallbacks) {
                 callback.playerPrepared(mItem);
                 callback.playerProgress(mItem, mMediaPlayer.getCurrentPosition(), 0);

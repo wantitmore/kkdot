@@ -1,6 +1,5 @@
 package com.willblaschko.android.alexa.interfaces.response;
 
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -51,6 +50,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,9 +72,11 @@ public class ResponseParser {
 
     public static final String TAG = "ResponseParser";
     public static boolean RECOGNIZE_STATE = false;
+    private static final int INTEVAR = 3000;//if exceed the time,the UI switch to Control-only
 
     private static final Pattern PATTERN = Pattern.compile("<(.*?)>");
     public static String kkDirective;
+    static List<String> nameSpaceList = new ArrayList<>();
 
     private final static HashMap<String, Class> mRenderTypeMap = new HashMap() {{
         put("BodyTemplate1", Template1Bean.class);
@@ -166,24 +169,37 @@ public class ResponseParser {
                     try {
                         String directive = data.toString(Charset.defaultCharset().displayName());
                         boolean isCardData = isCard(directive);
-                        Log.d(TAG, "parseResponse: iscard?" + isCardData + "--directive is " + directive);
                         JSONObject jsonObject;
 
                             jsonObject = new JSONObject(directive);
-                            final String nameSpace = jsonObject.getJSONObject("directive").getJSONObject("header").getString("namespace");
-                            if ("AudioPlayer".equals(nameSpace)) {
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        SystemClock.sleep(2000);
-                                        Log.d(TAG, "onTick: ----------------======== " + nameSpace);
-                                        if (!"TemplateRuntime".equals(nameSpace)) {
-                                            EventBus.getDefault().post("Controls-Only");
-                                        }
+                        JSONObject jsonHeader = jsonObject.getJSONObject("directive").getJSONObject("header");
+                        final String nameSpace = jsonHeader.getString("namespace");
+                        String name = jsonHeader.getString("name");
+                        Log.d(TAG, "parseResponse: nameSpace is " + nameSpace + ", name is " + name);
+                        nameSpaceList.add(nameSpace);
+                        if ("AudioPlayer".equals(nameSpace) && "Play".equals(name)) {
+                            nameSpaceList.clear();
+                            Log.d(TAG, "parseResponse: 111111111111111");
+                            final Timer timer = new Timer();
+                            timer.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    if (nameSpaceList.size() == 0) {
+                                        EventBus.getDefault().post("Controls-Only");
                                     }
-                                }).start();
-                            }
-                            Log.d(TAG, "parseResponse: nameSpace is " + nameSpace);
+                                    for (int i = 0; i< nameSpaceList.size(); i++) {
+                                        if ("TemplateRuntime".equals(nameSpaceList.get(i))) {
+                                            nameSpaceList.clear();
+                                            break;
+                                        }
+                                        nameSpaceList.clear();
+                                        Log.d(TAG, "parseResponse: 111111111111111--------");
+                                        EventBus.getDefault().post("Controls-Only");
+                                    }
+                                    timer.cancel();
+                                }
+                            }, INTEVAR);
+                        }
                             if ("SpeechRecognizer".equals(nameSpace)) {
                                 RECOGNIZE_STATE = true;
                             } else {
@@ -191,7 +207,7 @@ public class ResponseParser {
                             }
                             if (isCardData) {
                                 Class targetClazz;
-                                String headName = jsonObject.getJSONObject("directive").getJSONObject("header").getString("name");
+                                String headName = jsonHeader.getString("name");
                                 targetClazz = mRenderTypeMap.get(headName);
                                 if (targetClazz == null) {
                                     String renderType = jsonObject.getJSONObject("directive").getJSONObject("payload").getString("type");
@@ -200,9 +216,7 @@ public class ResponseParser {
                                 Gson gson = new Gson();
                                 Object renderObj = gson.fromJson(directive, targetClazz);
                                 EventBus.getDefault().post(renderObj);
-                        } else if (!"AudioPlayer".equals(nameSpace)) {
-                            //EventBus.getDefault().post("CLEAR_RENDER_TEMPLATE");
-                        }
+                            }
                         directives.add(getDirective(directive));
                     } catch (JSONException e) {
                         e.printStackTrace();

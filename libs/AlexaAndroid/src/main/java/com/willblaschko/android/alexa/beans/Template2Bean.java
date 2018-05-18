@@ -147,6 +147,8 @@ public class Template2Bean implements Parcelable {
             private String textField;
             private ImageBean image;
 
+            private ImageBean skillIcon;
+
             public String getType() {
                 return type;
             }
@@ -342,6 +344,14 @@ public class Template2Bean implements Parcelable {
                 };
             }
 
+            public ImageBean getSkillIcon() {
+                return skillIcon;
+            }
+
+            public void setSkillIcon(ImageBean skillIcon) {
+                this.skillIcon = skillIcon;
+            }
+
             @Override
             public int describeContents() {
                 return 0;
@@ -354,6 +364,7 @@ public class Template2Bean implements Parcelable {
                 dest.writeParcelable(this.title, flags);
                 dest.writeString(this.textField);
                 dest.writeParcelable(this.image, flags);
+                dest.writeParcelable(this.skillIcon, flags);
             }
 
             public PayloadBean() {
@@ -365,6 +376,7 @@ public class Template2Bean implements Parcelable {
                 this.title = in.readParcelable(TitleBean.class.getClassLoader());
                 this.textField = in.readString();
                 this.image = in.readParcelable(ImageBean.class.getClassLoader());
+                this.skillIcon = in.readParcelable(ImageBean.class.getClassLoader());
             }
 
             public static final Creator<PayloadBean> CREATOR = new Creator<PayloadBean>() {

@@ -14,12 +14,17 @@
         android:background="@color/color_slide"
         android:layout_width="300dp"
         android:layout_height="match_parent">
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="300dp"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:padding="30dp">
+
+        <Button
+            android:visibility="invisible"
+            android:layout_width="1dp"
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/main_title"
@@ -31,6 +36,7 @@
 
         <TextView
             android:id="@+id/sub_title"
+            android:layout_below="@id/main_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
@@ -39,12 +45,20 @@
 
         <TextView
             android:id="@+id/text_content"
+            android:layout_below="@id/sub_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:lineSpacingExtra="3dp"
+            style="@style/ScrollText"
             android:textSize="16sp"/>
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/iv_skills_icon"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
     <ImageView
         style="@style/logo"
         />

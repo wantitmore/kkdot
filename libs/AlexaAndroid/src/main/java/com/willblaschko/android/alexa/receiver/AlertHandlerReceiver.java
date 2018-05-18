@@ -172,7 +172,7 @@ public class AlertHandlerReceiver extends BroadcastReceiver {
             Log.d(TAG, "cancelAlertTask: isActive " + active);
             if (active) {
                 Log.d(TAG, "cancelAlertTask: ------------------------");
-//                sendBroadcast(new Intent("com.konka.alexa.stopAlert"));
+                mContext.sendBroadcast(new Intent("com.konka.alexa.alertStop"));
                 intent.putExtra("active", true);
                 mContext.startService(intent);
             }

@@ -413,6 +413,7 @@ public class PlayerInfoBean implements Parcelable {
                         @Override
                         public void writeToParcel(Parcel dest, int flags) {
                             dest.writeString(this.url);
+                            dest.writeString(this.size);
                         }
 
                         public SourcesBeanX() {
@@ -420,6 +421,7 @@ public class PlayerInfoBean implements Parcelable {
 
                         protected SourcesBeanX(Parcel in) {
                             this.url = in.readString();
+                            this.size = in.readString();
                         }
 
                         public static final Creator<SourcesBeanX> CREATOR = new Creator<SourcesBeanX>() {
@@ -480,7 +482,10 @@ public class PlayerInfoBean implements Parcelable {
                     dest.writeParcelable(this.art, flags);
                     dest.writeInt(this.mediaLengthInMilliseconds);
                     dest.writeString(this.title);
+                    dest.writeString(this.titleSubtext1);
+                    dest.writeString(this.titleSubtext2);
                     dest.writeString(this.header);
+                    dest.writeString(this.headerSubtext1);
                 }
 
                 protected ContentBean(Parcel in) {
@@ -488,7 +493,10 @@ public class PlayerInfoBean implements Parcelable {
                     this.art = in.readParcelable(ArtBean.class.getClassLoader());
                     this.mediaLengthInMilliseconds = in.readInt();
                     this.title = in.readString();
+                    this.titleSubtext1 = in.readString();
+                    this.titleSubtext2 = in.readString();
                     this.header = in.readString();
+                    this.headerSubtext1 = in.readString();
                 }
 
                 public static final Creator<ContentBean> CREATOR = new Creator<ContentBean>() {

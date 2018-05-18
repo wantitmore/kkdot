@@ -3,6 +3,7 @@ package com.willblaschko.android.alexa.receiver;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.willblaschko.android.alexa.service.ResetAlertService;
@@ -17,7 +18,13 @@ public class AlertReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "onReceive: -------------------" + intent.getAction());
+        //check login
+        SharedPreferences alexa = context.getSharedPreferences("alexa", Context.MODE_PRIVATE);
+        boolean needLogin = alexa.getBoolean("need_login", true);
+        Log.d(TAG, "onReceive: -------------------" + intent.getAction() + "-->" + needLogin);
+        if (needLogin) {
+            return;
+        }
         if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {
             context.startService(new Intent(context, ResetAlertService.class));
         }

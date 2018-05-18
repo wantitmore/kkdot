@@ -679,7 +679,7 @@ public class AlexaManager {
                     mAndroidSystemHandler.controlKK(ResponseParser.kkDirective);
                 }
                 ResponseParser.kkDirective = null;
-                mAndroidSystemHandler.handleItems(items);
+                mAndroidSystemHandler.handleItems(items, false);
 
                 if (callback != null) {
                     callback.success(items);

@@ -33,6 +33,7 @@ import okio.BufferedSource;
 /**
  * @author will on 4/27/2016.
  */
+
 public class DownChannelService extends Service {
 
     private static final String TAG = "DownChannelService";
@@ -40,7 +41,8 @@ public class DownChannelService extends Service {
     private AlexaManager alexaManager;
     private Call currentCall;
     private AndroidSystemHandler handler;
-
+    private Handler runnableHandler;
+    private Runnable pingRunnable;
 
     @Nullable
     @Override
@@ -56,6 +58,44 @@ public class DownChannelService extends Service {
         alexaManager = AlexaManager.getInstance(this);
         handler = AndroidSystemHandler.getInstance(this);
 
+        runnableHandler = new Handler(Looper.getMainLooper());
+        pingRunnable = new Runnable() {
+            @Override
+            public void run() {
+                TokenManager.getAccessToken(alexaManager.getAuthorizationManager().getAmazonAuthorizationManager(), DownChannelService.this, new TokenManager.TokenCallback() {
+                    @Override
+                    public void onSuccess(String token) {
+
+                        Log.i(TAG, "Sending heartbeat");
+                        final Request request = new Request.Builder()
+                                .url(alexaManager.getPingUrl())
+                                .get()
+                                .addHeader("Authorization", "Bearer " + token)
+                                .build();
+
+                        ClientUtil.getTLS12OkHttpClient()
+                                .newCall(request)
+                                .enqueue(new Callback() {
+                                    @Override
+                                    public void onFailure(Call call, IOException e) {
+
+                                    }
+
+                                    @Override
+                                    public void onResponse(Call call, Response response) throws IOException {
+                                        runnableHandler.postDelayed(pingRunnable, 4 * 60 * 1000);
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+
+                    }
+                });
+            }
+        };
+
         openDownChannel();
 
     }
@@ -67,6 +107,7 @@ public class DownChannelService extends Service {
         if(currentCall != null){
             currentCall.cancel();
         }
+        runnableHandler.removeCallbacks(pingRunnable);
     }
 
 
@@ -87,17 +128,17 @@ public class DownChannelService extends Service {
                 currentCall.enqueue(new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
-
+                        Log.d(TAG, "onFailure: error is " + e.getMessage());
                     }
 
                     @Override
                     public void onResponse(Call call, Response response) throws IOException {
-
+                        Log.d(TAG, "onResponse: code-->" + response.code());
                         alexaManager.sendEvent(Event.getSynchronizeStateEvent(), new ImplAsyncCallback<AvsResponse, Exception>() {
                             @Override
                             public void success(AvsResponse result) {
-                                handler.handleItems(result);
-                                sendHeartbeat();
+                                handler.handleItems(result, true);
+                                runnableHandler.post(pingRunnable);
                             }
                         });
 
@@ -106,10 +147,9 @@ public class DownChannelService extends Service {
                         while (!bufferedSource.exhausted()) {
                             String line = bufferedSource.readUtf8Line();
                             try {
-                                Log.d(TAG, "onResponse: line");
                                 Directive directive = ResponseParser.getDirective(line);
-                                handler.handleDirective(directive);
-
+                                AvsResponse responses = handler.handleDirective(directive);
+                                EventBus.getDefault().post(responses);
                                 //surface to our UI if it's up
                                 try {
                                     AvsItem item = ResponseParser.parseDirective(directive);
@@ -118,7 +158,7 @@ public class DownChannelService extends Service {
                                     e.printStackTrace();
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Bad line error is " + e.getMessage());
+                                Log.e(TAG, "Bad line");
                             }
                         }
 
@@ -134,44 +174,4 @@ public class DownChannelService extends Service {
         });
     }
 
-    private void sendHeartbeat(){
-        TokenManager.getAccessToken(alexaManager.getAuthorizationManager().getAmazonAuthorizationManager(), DownChannelService.this, new TokenManager.TokenCallback() {
-            @Override
-            public void onSuccess(String token) {
-
-                Log.i(TAG, "Sending heartbeat");
-                final Request request = new Request.Builder()
-                        .url(alexaManager.getPingUrl())
-                        .get()
-                        .addHeader("Authorization", "Bearer " + token)
-                        .build();
-
-                ClientUtil.getTLS12OkHttpClient()
-                        .newCall(request)
-                        .enqueue(new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
-
-                            }
-
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-
-                            }
-                        });
-
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendHeartbeat();
-                    }
-                }, 4 * 60 * 1000);
-            }
-
-            @Override
-            public void onFailure(Throwable e) {
-
-            }
-        });
-    }
 }

@@ -2,6 +2,7 @@ package com.willblaschko.android.alexavoicelibrary;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -46,14 +47,19 @@ public class LoginActivity extends Activity implements View.OnClickListener{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SharedPreferences alexa = getSharedPreferences(Constants.ALEXA, MODE_PRIVATE);
-        boolean needLogin = alexa.getBoolean(Constants.LOGIN, true);
-        Log.d(TAG, "onCreate: needLogin " + needLogin);
-        if (!needLogin) {
-            // show education login UI
+
+        boolean fromVoiceReceiver = getIntent().getBooleanExtra("fromVoiceReceiver", false);
+        if (!fromVoiceReceiver) {
+            SharedPreferences alexa = getSharedPreferences(Constants.ALEXA, Context.MODE_PRIVATE);
+            boolean needLogin = alexa.getBoolean(Constants.LOGIN, true);
+
+            Log.d(TAG, "onCreate: needLogin " + needLogin);
+            if (!needLogin) {
+                // show education login UI
 //            startActivity(new Intent(this, LoginActivity.class));
-            startService(new Intent(this, DisplayService.class));
-            finish();
+                startService(new Intent(this, DisplayService.class));
+                finish();
+            }
         }
         setContentView(R.layout.activity_login2);
         initView();
@@ -147,7 +153,8 @@ public class LoginActivity extends Activity implements View.OnClickListener{
         if ("success".equals(auth)) {
             mThinsTryLayout.setVisibility(View.VISIBLE);
             mloginLayout.setVisibility(View.GONE);
-            getSharedPreferences(Constants.ALEXA, MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
+            getSharedPreferences(Constants.ALEXA, Context.MODE_PRIVATE).edit().putBoolean(Constants.LOGIN, false).apply();
+//            Settings.System.putInt(getContentResolver(), Constants.LOGIN, 0);
         }
     }
 

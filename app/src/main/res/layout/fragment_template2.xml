@@ -13,13 +13,17 @@
         android:background="@color/color_slide"
         android:layout_width="300dp"
         android:layout_height="match_parent">
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="300dp"
             android:layout_height="0dp"
-            android:orientation="vertical"
             android:layout_weight="1"
             android:padding="30dp"
             >
+
+            <Button
+                android:visibility="invisible"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content" />
 
             <TextView
                 android:id="@+id/main_title"
@@ -31,6 +35,7 @@
 
             <TextView
                 android:id="@+id/sub_title"
+                android:layout_below="@id/main_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
@@ -38,19 +43,28 @@
 
             <ImageView
                 android:id="@+id/main_image"
+                android:layout_below="@+id/sub_title"
                 android:layout_width="238dp"
                 android:layout_height="159dp"
                 android:layout_marginTop="26.5dp"/>
 
             <TextView
                 android:id="@+id/text_content"
+                android:layout_below="@+id/main_image"
                 android:layout_width="238dp"
                 android:layout_height="wrap_content"
+                style="@style/ScrollText"
                 android:layout_marginTop="20dp"
                 android:lineSpacingExtra="3dp"
                 android:textSize="16sp"/>
-
-        </LinearLayout>
+            <ImageView
+                android:id="@+id/iv_skills_icon"
+                android:padding="30dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
         <ImageView
             style="@style/logo"
             />

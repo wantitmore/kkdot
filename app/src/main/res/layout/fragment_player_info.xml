@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="#D9000000"
     android:orientation="vertical"
+    android:id="@+id/ll_play_info"
     android:padding="30dp">
 
     <LinearLayout
@@ -173,22 +174,28 @@
             android:layout_height="152dp"
             android:layout_gravity="center"
             android:gravity="center"
-            android:background="#ff0">
+            android:background="#000">
 
             <ImageView
                 android:id="@+id/left"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="20dp"
                 android:src="@drawable/play_back_controller_previous"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <ImageView
                 android:id="@+id/play"
+                android:clickable="true"
+                android:focusable="true"
                 android:layout_marginEnd="20dp"
                 android:src="@drawable/play_back_controller_pause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <ImageView
                 android:id="@+id/right"
+                android:clickable="true"
+                android:focusable="true"
                 android:src="@drawable/play_back_controller_next"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />

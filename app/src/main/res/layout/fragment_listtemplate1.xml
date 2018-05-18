@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#00000000">
 
@@ -15,20 +17,24 @@
         android:background="@color/color_slide"
         android:orientation="vertical"
 
-        android:padding="30dp">
+        >
         <LinearLayout
             android:orientation="vertical"
             android:layout_weight="1"
             android:layout_width="300dp"
             android:layout_height="0dp">
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="300dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:padding="30dp"
                 >
+
+                <Button
+                    android:visibility="invisible"
+                    android:layout_width="1dp"
+                    android:layout_height="wrap_content" />
 
                 <TextView
                     android:id="@+id/main_title"
@@ -40,22 +46,35 @@
 
                 <TextView
                     android:id="@+id/sub_title"
+                    android:layout_below="@+id/main_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
                     android:text="subTitle"/>
 
-                <LinearLayout
+                <app.com.tvrecyclerview.TvRecyclerView
                     android:id="@+id/list_items"
+                    android:focusable="true"
+                    app:scrollMode="followScroll"
+                    app:isAutoProcessFocus="false"
+                    android:focusableInTouchMode="true"
+                    android:layout_below="@+id/sub_title"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:layout_marginTop="20dp"/>
-            </LinearLayout>
-            <ImageView
-                style="@style/logo"
-                />
+                <ImageView
+                    android:id="@+id/iv_skills_icon"
+                    android:padding="30dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </RelativeLayout>
         </LinearLayout>
+        <ImageView
+            style="@style/logo"
+            />
     </LinearLayout>
 
 </LinearLayout>

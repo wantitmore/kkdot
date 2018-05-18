@@ -1,12 +1,14 @@
 package com.willblaschko.android.alexavoicelibrary.widget;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -20,6 +22,8 @@ import com.willblaschko.android.alexavoicelibrary.R;
 
 import java.util.List;
 
+import app.com.tvrecyclerview.TvRecyclerView;
+
 /**
  * Created by user001 on 2018-4-26.
  */
@@ -27,7 +31,6 @@ import java.util.List;
 public class ContentView {
 
     private static final String TAG = "ContentView";
-
 
 
     public View setView(Context context, Object content) {
@@ -52,14 +55,20 @@ public class ContentView {
 
         TextView mainTitleView = (TextView) view.findViewById(R.id.main_title);
         TextView subTitleView = (TextView) view.findViewById(R.id.sub_title);
-        LinearLayout listItemsView = (LinearLayout) view.findViewById(R.id.list_items);
+        TvRecyclerView listItemsView = (TvRecyclerView) view.findViewById(R.id.list_items);
+        ImageView skillsIcon = (ImageView) view.findViewById(R.id.iv_skills_icon);
 
         ListTemplate1Bean.DirectiveBean.PayloadBean payloadBean = content.getDirective().getPayload();
         ListTemplate1Bean.DirectiveBean.PayloadBean.TitleBean titleBean = payloadBean.getTitle();
+        try {
+            Glide.with(context).load(payloadBean.getSkillIcon().getSources().get(0).getUrl()).into(skillsIcon);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         mainTitleView.setText(titleBean.getMainTitle());
         subTitleView.setText(titleBean.getSubTitle());
-        List<ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean> dataItems = payloadBean.getListItems();
-        for (ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean item : dataItems) {
+        List<ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean> mDataItems = payloadBean.getListItems();
+        /*for (ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean item : mDataItems) {
             LinearLayout ll = new LinearLayout(context);
             ll.setOrientation(LinearLayout.HORIZONTAL);
             ll.setGravity(Gravity.CENTER_VERTICAL);
@@ -76,9 +85,55 @@ public class ContentView {
             rightTv.setTextSize(24);
             ll.addView(rightTv);
             listItemsView.addView(ll);
-        }
+        }*/
+        ListAdapter adapter = new ListAdapter(context, mDataItems);
+        listItemsView.setLayoutManager(new LinearLayoutManager(context));
+        listItemsView.setAdapter(adapter);
+        listItemsView.setItemSelected(5);
+        listItemsView.setScrollMode(1);
         return view;
     }
+
+    class ListAdapter extends RecyclerView.Adapter<ListAdapter.MyHolder> {
+        private Context context;
+        private List<ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean> beans;
+
+        public ListAdapter(Context context, List<ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean>beans) {
+            this.context = context;
+            this.beans = beans;
+        }
+
+        @Override
+        public MyHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return new MyHolder(LayoutInflater.from(context).inflate(R.layout.item, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(MyHolder holder, int position) {
+            ListTemplate1Bean.DirectiveBean.PayloadBean.ListItemsBean bean = beans.get(position);
+            holder.num.setText(bean.getLeftTextField());
+            holder.item_content.setText(bean.getRightTextField());
+            holder.itemView.setFocusable(true);
+        }
+
+        @Override
+        public int getItemCount() {
+            return beans == null ? 0 : beans.size();
+        }
+
+        class MyHolder extends RecyclerView.ViewHolder {
+
+            private final TextView num;
+            private final TextView item_content;
+
+            private MyHolder(View itemView) {
+                super(itemView);
+                num = (TextView) itemView.findViewById(R.id.num);
+                item_content = (TextView) itemView.findViewById(R.id.item_content);
+            }
+        }
+    }
+
 
     @NonNull
     private View setWeatherView(Context context, WeatherTemplateBean content) {
@@ -134,6 +189,9 @@ public class ContentView {
         TextView subTitleView = (TextView) view.findViewById(R.id.sub_title);
         ImageView mainImage = (ImageView) view.findViewById(R.id.main_image);
         TextView textContentView = (TextView) view.findViewById(R.id.text_content);
+        ImageView skillsIcon = (ImageView) view.findViewById(R.id.iv_skills_icon);
+
+        textContentView.setMovementMethod(new ScrollingMovementMethod());
 
         Template2Bean.DirectiveBean.PayloadBean payloadBean = content.getDirective().getPayload();
         Template2Bean.DirectiveBean.PayloadBean.TitleBean titleBean = payloadBean.getTitle();
@@ -142,6 +200,11 @@ public class ContentView {
         String url = payloadBean.getImage().getSources().get(0).getUrl();
         Glide.with(context).load(url).into(mainImage);
         textContentView.setText(payloadBean.getTextField());
+        try {
+            Glide.with(context).load(payloadBean.getSkillIcon().getSources().get(0).getUrl()).into(skillsIcon);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return view;
     }
 
@@ -153,12 +216,18 @@ public class ContentView {
         TextView mainTitleView = (TextView) view.findViewById(R.id.main_title);
         TextView subTitleView = (TextView) view.findViewById(R.id.sub_title);
         TextView textContentView = (TextView) view.findViewById(R.id.text_content);
-
+        ImageView skillsIcon = (ImageView) view.findViewById(R.id.iv_skills_icon);
+        textContentView.setMovementMethod(new ScrollingMovementMethod());
         Template1Bean.DirectiveBean.PayloadBean payloadBean = content.getDirective().getPayload();
         Template1Bean.DirectiveBean.PayloadBean.TitleBean titleBean = payloadBean.getTitle();
         mainTitleView.setText(titleBean.getMainTitle());
         subTitleView.setText(titleBean.getSubTitle());
         textContentView.setText(payloadBean.getTextField());
+        try {
+            Glide.with(context).load(payloadBean.getSkillIcon().getSources().get(0).getUrl()).into(skillsIcon);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return view;
     }
 

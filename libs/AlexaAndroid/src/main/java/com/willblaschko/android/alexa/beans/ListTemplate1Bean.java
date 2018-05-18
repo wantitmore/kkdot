@@ -141,6 +141,7 @@ public class ListTemplate1Bean implements Parcelable {
             private String token;
             private TitleBean title;
             private List<ListItemsBean> listItems;
+            private ImageBean skillIcon;
 
             public String getType() {
                 return type;
@@ -230,6 +231,113 @@ public class ListTemplate1Bean implements Parcelable {
                 };
             }
 
+            public ImageBean getSkillIcon() {
+                return skillIcon;
+            }
+
+            public void setSkillIcon(ImageBean skillIcon) {
+                this.skillIcon = skillIcon;
+            }
+
+            public static class ImageBean implements Parcelable {
+                private List<SourcesBean> sources;
+
+                public List<SourcesBean> getSources() {
+                    return sources;
+                }
+
+                public void setSources(List<SourcesBean> sources) {
+                    this.sources = sources;
+                }
+
+                public static class SourcesBean implements Parcelable {
+                    /**
+                     * size : SMALL
+                     * url : https://m.media-amazon.com/images/S/com.evi.images-irs/premium/a7/a7be6c563127224c91b57f2bb220d688.png
+                     */
+
+                    private String size;
+                    private String url;
+
+                    public String getSize() {
+                        return size;
+                    }
+
+                    public void setSize(String size) {
+                        this.size = size;
+                    }
+
+                    public String getUrl() {
+                        return url;
+                    }
+
+                    public void setUrl(String url) {
+                        this.url = url;
+                    }
+
+                    @Override
+                    public int describeContents() {
+                        return 0;
+                    }
+
+                    @Override
+                    public void writeToParcel(Parcel dest, int flags) {
+                        dest.writeString(this.size);
+                        dest.writeString(this.url);
+                    }
+
+                    public SourcesBean() {
+                    }
+
+                    protected SourcesBean(Parcel in) {
+                        this.size = in.readString();
+                        this.url = in.readString();
+                    }
+
+                    public static final Creator<SourcesBean> CREATOR = new Creator<SourcesBean>() {
+                        @Override
+                        public SourcesBean createFromParcel(Parcel source) {
+                            return new SourcesBean(source);
+                        }
+
+                        @Override
+                        public SourcesBean[] newArray(int size) {
+                            return new SourcesBean[size];
+                        }
+                    };
+                }
+
+                public ImageBean() {
+                }
+
+                @Override
+                public int describeContents() {
+                    return 0;
+                }
+
+                @Override
+                public void writeToParcel(Parcel dest, int flags) {
+                    dest.writeList(this.sources);
+                }
+
+                protected ImageBean(Parcel in) {
+                    this.sources = new ArrayList<>();
+                    in.readList(this.sources, SourcesBean.class.getClassLoader());
+                }
+
+                public static final Creator<ImageBean> CREATOR = new Creator<ImageBean>() {
+                    @Override
+                    public ImageBean createFromParcel(Parcel source) {
+                        return new ImageBean(source);
+                    }
+
+                    @Override
+                    public ImageBean[] newArray(int size) {
+                        return new ImageBean[size];
+                    }
+                };
+            }
+
             public static class ListItemsBean implements Parcelable {
                 /**
                  * leftTextField : 1.
@@ -298,6 +406,7 @@ public class ListTemplate1Bean implements Parcelable {
                 dest.writeString(this.token);
                 dest.writeParcelable(this.title, flags);
                 dest.writeList(this.listItems);
+                dest.writeParcelable(this.skillIcon, flags);
             }
 
             public PayloadBean() {
@@ -307,8 +416,9 @@ public class ListTemplate1Bean implements Parcelable {
                 this.type = in.readString();
                 this.token = in.readString();
                 this.title = in.readParcelable(TitleBean.class.getClassLoader());
-                this.listItems = new ArrayList<ListItemsBean>();
+                this.listItems = new ArrayList<>();
                 in.readList(this.listItems, ListItemsBean.class.getClassLoader());
+                this.skillIcon = in.readParcelable(ImageBean.class.getClassLoader());
             }
 
             public static final Creator<PayloadBean> CREATOR = new Creator<PayloadBean>() {
