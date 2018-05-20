@@ -230,8 +230,8 @@ public abstract class AbstractAudioRecorder implements AudioRecorder {
 //        android.util.Log.d("getRmsdb()", "getRmsdb: --------------------");
         long sumOfSquares = getRms(mRecordedLength, mBuffer.length);
         double rootMeanSquare = Math.sqrt(sumOfSquares / (mBuffer.length / 2));
-        android.util.Log.d("AbstractAudioRecorder", "getRmsdb: " + rootMeanSquare + ", mRecordedLength is " + mRecordedLength + "," +
-                " mBuffer.length is " + mBuffer.length + ", sumOfSquares is " + sumOfSquares);
+//        android.util.Log.d("AbstractAudioRecorder", "getRmsdb: " + rootMeanSquare + ", mRecordedLength is " + mRecordedLength + "," +
+//                " mBuffer.length is " + mBuffer.length + ", sumOfSquares is " + sumOfSquares);
         if (rootMeanSquare > 1) {
             // TODO: why 10?
             return (float) (10 * Math.log10(rootMeanSquare));

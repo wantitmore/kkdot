@@ -1,11 +1,13 @@
 package com.willblaschko.android.alexavoicelibrary.widget;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -130,6 +132,16 @@ public class ContentView {
                 super(itemView);
                 num = (TextView) itemView.findViewById(R.id.num);
                 item_content = (TextView) itemView.findViewById(R.id.item_content);
+                itemView.setOnKeyListener(new View.OnKeyListener() {
+                    @Override
+                    public boolean onKey(View v, int keyCode, KeyEvent event) {
+                        Log.d(TAG, "onKey: keycode is " + keyCode);
+                        if (keyCode == KeyEvent.KEYCODE_BACK) {
+                            context.sendBroadcast(new Intent("com.konka.alexa.back"));
+                        }
+                        return false;
+                    }
+                });
             }
         }
     }

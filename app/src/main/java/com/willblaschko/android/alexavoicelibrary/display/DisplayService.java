@@ -13,16 +13,22 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcelable;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import com.willblaschko.android.alexa.AlexaManager;
 import com.willblaschko.android.alexa.audioplayer.AlexaAudioPlayer;
 import com.willblaschko.android.alexa.beans.PlayerInfoBean;
+import com.willblaschko.android.alexa.beans.Template1Bean;
+import com.willblaschko.android.alexa.beans.Template2Bean;
+import com.willblaschko.android.alexa.beans.WeatherTemplateBean;
 import com.willblaschko.android.alexa.callbacks.AsyncCallback;
 import com.willblaschko.android.alexa.interfaces.AvsItem;
 import com.willblaschko.android.alexa.interfaces.AvsResponse;
@@ -39,6 +45,7 @@ import com.willblaschko.android.alexa.interfaces.speechsynthesizer.AvsSpeakItem;
 import com.willblaschko.android.alexa.requestbody.DataRequestBody;
 import com.willblaschko.android.alexa.service.DownChannelService;
 import com.willblaschko.android.alexavoicelibrary.BuildConfig;
+import com.willblaschko.android.alexavoicelibrary.R;
 import com.willblaschko.android.alexavoicelibrary.actions.BaseListenerFragment;
 import com.willblaschko.android.alexavoicelibrary.utility.CommonUtil;
 import com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView;
@@ -70,6 +77,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     private static final String TAG = "DisplayService";
     public static final String ALEXA_ALERT_START = "com.konka.alexa.alertStart";
     public static final String ALEXA_ALERT_STOP = "com.konka.alexa.alertStop";
+    public static final String ALEXA_BACK = "com.konka.alexa.back";
 
     private static final int AUDIO_RATE = 16000;
     private final static int STATE_FINISHED = 0;
@@ -95,6 +103,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     DisplayService service = DisplayService.this;
     private DisplayBinder mBinder = new DisplayBinder();
     private boolean isPlayingAlert = false;
+    private String templateType;
 
     public DisplayService() {
         super();
@@ -111,6 +120,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         filter.addAction("com.konka.android.intent.action.STOP_VOICE");
         filter.addAction(ALEXA_ALERT_START);
         filter.addAction(ALEXA_ALERT_STOP);
+        filter.addAction(ALEXA_BACK);
         mAlexaReceiver = new AlexaReceiver();
         registerReceiver(mAlexaReceiver, filter);
         EventBus.getDefault().register(this);
@@ -338,10 +348,10 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
                 Log.i(TAG, "Complete " + completedItem.getToken() + " fired");
             }
             sendPlaybackFinishedEvent(completedItem);
-
+            removeContentView();
             checkQueue();
 
-            removeContentView();
+
         }
 
         @Override
@@ -360,6 +370,13 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     private void removeContentView() {
         if (mWindowManager != null && mView != null) {
+            Log.d(TAG, "removeContentView: --->" + templateType);
+            if ("listTemType".equals(templateType)) {
+                Log.d(TAG, "removeContentView: -->" + ", " + avsQueue.size());
+                if (mResponseItems.size() > 0 && mResponseItems.get(0).equals("AvsExpectSpeechItem")) {
+                    return;
+                }
+            }
             Log.d(TAG, "itemComplete: removeContentView " + Thread.currentThread().getName());
             mWindowManager.removeViewImmediate(mView);
             mView = null;
@@ -470,6 +487,8 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         }
     };
 
+    private List<String> mResponseItems = new ArrayList<>();
+
     /**
      * Handle the response sent back from Alexa's parsing of the Intent, these can be any of the AvsItem types (play, speak, stop, clear, listen)
      * @param response a List<AvsItem> returned from the mAlexaManager.sendTextRequest() call in sendVoiceToAlexa()
@@ -483,8 +502,10 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             //from doing that
             setState(STATE_FINISHED);
             Log.i(TAG,"response.size():"+response.size());
+            mResponseItems.clear();
             for (int i = response.size() - 1; i >= 0; i--) {
                 Log.i(TAG, "AvsItem type:" + response.get(i).getClass().getName());
+                mResponseItems.add(response.get(i).getClass().getSimpleName());
                 if(response.get(i) instanceof AvsReplaceAllItem){
                     avsQueue.clear();
                     if(audioPlayer.isPlaying()) {
@@ -551,6 +572,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         }
 
         final AvsItem current = avsQueue.get(0);
+        for (int i = 0; i < avsQueue.size(); i++) {
+            Log.d(TAG, "checkQueue:  Item type " + avsQueue.get(i).getClass().getName());
+        }
 
         Log.i(TAG, "Item type " + current.getClass().getName());
 
@@ -698,6 +722,13 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         if (mVoiceStateView != null) {
             mVoiceStateView.setCurrentState(CircleVoiceStateView.State.SYSTEM_ERR);
         }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SystemClock.sleep(1500);
+                mVoiceStateView.setVisibility(View.GONE);
+            }
+        }).start();
     }
 
 
@@ -711,6 +742,9 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
     public void startListening() {
         Log.d(TAG, "------------> startListening");
         //recorder is not null,mean that an audio request is sentting
+        if (mVoiceStateView != null) {
+            mVoiceStateView.setVisibility(View.VISIBLE);
+        }
         if (recorder == null) {
             setState(STATE_LISTENING);
             Log.d(TAG, "startListening: recorder = null");
@@ -762,13 +796,6 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
 
     };
 
-/*    public void fadeOutView() {
-        EventBus.getDefault().post("");
-        Log.d(TAG, "fadeOutView: --");
-//         finish();
-        overridePendingTransition(0, R.animator.out_activity);
-    }*/
-
     private void stopListening() {
         Log.d(TAG, "------------> stopListening");
         if (recorder != null) {
@@ -780,14 +807,27 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
         }
     }
 
+
     protected void stopCurrentPlayingItem(){
-        if (avsQueue.size() == 0|| audioPlayer == null) {
+        if (avsQueue.size() == 0 || audioPlayer == null) {
             return;
         }
         AvsItem current = avsQueue.get(0);
         if(audioPlayer.isPlaying()){
             if(current instanceof AvsSpeakItem){
-                avsQueue.remove(current);
+                if (TextUtils.equals(templateType, "listTemType")) {//在有音乐播放等情况下失效，需将 一组一组的删除
+                    int lastItemIndex = avsQueue.size() - 1;
+                    if (avsQueue.get(lastItemIndex) instanceof AvsExpectSpeechItem && avsQueue.get(lastItemIndex - 1) instanceof AvsSpeakItem) {
+                        Log.d(TAG, "stopCurrentPlayingItem: avsQueue.size() is " + avsQueue.size() + ", avsQueue.get(lastItemIndex) " + avsQueue.get(lastItemIndex).getClass().getSimpleName()
+                         + ", avsQueue.get(lastItemIndex - 1) is " + avsQueue.get(lastItemIndex - 1));
+                        Log.d(TAG, "--stopCurrentPlayingItem: avsQueue.size() is " + avsQueue.size());
+                        for (int i = 0; i < 3; i++) {
+                            avsQueue.remove(avsQueue.size() - 1);
+                        }
+                    }
+                }else {
+                    avsQueue.remove(current);
+                }
             }
 
             if(audioPlayer.getCurrentItem() instanceof AvsPlayRemoteItem){
@@ -878,11 +918,50 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             mWindowManager.removeView(mView);
             mView = null;
         }
-        if (mVoiceStateView != null) {
+        if (mVoiceStateView != null/* && audioPlayer != null && !(audioPlayer.getCurrentItem() instanceof AvsExpectSpeechItem)*/) {
             mVoiceStateView.setVisibility(View.GONE);
         }
         ContentView temView = new ContentView();
         mView = temView.setView(this, renderObj);
+        if (renderObj instanceof Template1Bean || renderObj instanceof Template2Bean) {
+            templateType = "normalType";
+            TextView textView = (TextView) mView.findViewById(R.id.text_content);
+            textView.setOnKeyListener(new View.OnKeyListener() {//listen backkey
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    Log.d(TAG, "onKey: keycode is " + keyCode);
+                    if (keyCode == KeyEvent.KEYCODE_BACK) {
+                        removeContentView();
+                        if (audioPlayer != null && audioPlayer.isPlaying()) {
+                            audioPlayer.stop(false);
+                            avsQueue.remove(audioPlayer.getCurrentItem());
+                            checkQueue();
+                        }
+                    }
+                    return false;
+                }
+            });
+        } else if(renderObj instanceof WeatherTemplateBean) {
+            templateType = "weatherType";
+            mView.setFocusableInTouchMode(true);
+            mView.setOnKeyListener(new View.OnKeyListener() {//listen backkey
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    Log.d(TAG, "onKey: keycode is " + keyCode);
+                    if (keyCode == KeyEvent.KEYCODE_BACK) {
+                        removeContentView();
+                        if (audioPlayer != null && audioPlayer.isPlaying()) {
+                            audioPlayer.stop(false);
+                            avsQueue.remove(audioPlayer.getCurrentItem());
+                            checkQueue();
+                        }
+                    }
+                    return false;
+                }
+            });
+        } else {
+            templateType = "listTemType";
+        }
         mWindowManager.addView(mView, layoutParams);
     }
 
@@ -912,6 +991,16 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
             } else if (Objects.equals(action, ALEXA_ALERT_STOP)) {
                 isPlayingAlert = false;
                 checkQueue();
+            } else if (Objects.equals(ALEXA_BACK, action)) {
+                mWindowManager.removeViewImmediate(mView);
+                mView = null;
+                Log.d(TAG, "onReceive: -------------------------------- " + audioPlayer.isPlaying());
+                if (audioPlayer != null && audioPlayer.isPlaying()) {
+//                    audioPlayer.stop(false);
+//                    avsQueue.remove(audioPlayer.getCurrentItem());
+                    stopCurrentPlayingItem();
+                    checkQueue();
+                }
             }
         }
     }

@@ -285,8 +285,8 @@ public class PlayInfoActivity extends AppCompatActivity  implements MusicProgres
                     final String strDuration = TimeFormatUitls.formatTime(mDuration);
                     mCurrentTimeView.setText(strCurrentTime);
                     mDurationView.setText(strDuration);
-                } else {
-//                    mProgressViewContainer.setVisibility(View.GONE);
+                } else if (mDuration <= 0 && mAudioPlayer.isPlaying())  {
+                    mProgressViewContainer.setVisibility(View.GONE);
                 }
             }
         });

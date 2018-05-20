@@ -72,7 +72,7 @@ public class ResponseParser {
 
     public static final String TAG = "ResponseParser";
     public static boolean RECOGNIZE_STATE = false;
-    private static final int INTEVAR = 3000;//if exceed the time,the UI switch to Control-only
+    private static final int INTEVAR = 8000;//if exceed the time,the UI switch to Control-only
 
     private static final Pattern PATTERN = Pattern.compile("<(.*?)>");
     public static String kkDirective;
@@ -179,7 +179,6 @@ public class ResponseParser {
                         nameSpaceList.add(nameSpace);
                         if ("AudioPlayer".equals(nameSpace) && "Play".equals(name)) {
                             nameSpaceList.clear();
-                            Log.d(TAG, "parseResponse: 111111111111111");
                             final Timer timer = new Timer();
                             timer.schedule(new TimerTask() {
                                 @Override
