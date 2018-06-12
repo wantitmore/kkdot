@@ -5,7 +5,7 @@
     <version value="3" />
 
     <list>
-        <mapping class="com.willblaschko.android.alexa.beans.AlertBean"/>
-        <mapping class="com.willblaschko.android.alexa.beans.UnSendBean"/>
+        <mapping class="com.konka.alexa.alexalib.beans.AlertBean"/>
+        <mapping class="com.konka.alexa.alexalib.beans.UnSendBean"/>
     </list>
 </litepal>

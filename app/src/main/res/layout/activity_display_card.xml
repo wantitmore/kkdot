@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <com.willblaschko.android.alexavoicelibrary.widget.CircleVoiceStateView
+    <com.konka.alexa.widget.CircleVoiceStateView
         android:id="@+id/voice_view_state"
         android:layout_gravity="bottom|right"
         android:layout_width="120dp"

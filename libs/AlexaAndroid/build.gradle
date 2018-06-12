@@ -24,7 +24,7 @@ ext {
     bintrayRepo = 'maven'
     bintrayName = 'AlexaAndroid'
 
-    publishedGroupId = 'com.willblaschko.android.alexa'
+    publishedGroupId = 'com.konka.alexa.alexa'
     libraryName = 'AlexaAndroid'
     artifact = 'AlexaAndroid'
 
@@ -66,11 +66,12 @@ dependencies {
     compile 'org.litepal.android:core:1.6.0'
     compile 'com.alibaba:fastjson:1.2.46'
     implementation files('libs/androidsvg-1.2.0.jar')
+    implementation 'com.google.android.exoplayer:exoplayer:2.7.1'
 }
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '26.0.2'
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 23
