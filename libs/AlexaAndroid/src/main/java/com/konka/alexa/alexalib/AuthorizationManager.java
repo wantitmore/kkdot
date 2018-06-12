@@ -11,6 +11,7 @@ import com.amazon.identity.auth.device.authorization.BuildConfig;
 import com.amazon.identity.auth.device.authorization.api.AmazonAuthorizationManager;
 import com.amazon.identity.auth.device.authorization.api.AuthorizationListener;
 import com.amazon.identity.auth.device.authorization.api.AuthzConstants;
+import com.google.gson.Gson;
 import com.konka.alexa.alexalib.callbacks.AsyncCallback;
 import com.konka.alexa.alexalib.callbacks.AuthorizationCallback;
 import com.konka.alexa.alexalib.utility.Util;
@@ -18,9 +19,18 @@ import com.konka.alexa.alexalib.utility.Util;
 import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * A static instance class that manages Authentication with the Amazon servers, it uses the TokenManager helper class to do most of its operations
@@ -32,6 +42,8 @@ public class AuthorizationManager {
 
     private final static String TAG = "AuthorizationHandler";
 
+    private static String URL = "https://api.amazon.com/auth/O2/create/codepair";
+
     private Context mContext;
     private String mProductId;
     private AmazonAuthorizationManager mAuthManager;
@@ -40,6 +52,7 @@ public class AuthorizationManager {
 
 
     private static final String CODE_VERIFIER = "code_verifier";
+    private OkHttpClient mOkHttpClient;
 
     /**
      * Create a new Auth Manager based on the supplied product id
@@ -119,6 +132,71 @@ public class AuthorizationManager {
         mAuthManager.authorize(APP_SCOPES, options, authListener);
     }
 
+    public void authenticateByCBL (AuthorizationCallback callback) {
+        Log.d(TAG, "authenticateByCBL: ----");
+        mCallback = callback;
+        mOkHttpClient = new OkHttpClient();
+        String PRODUCT_DSN = Settings.Secure.getString(mContext.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+        String scope_data = "{\"alexa:all\":{\"productID\":\"" + mProductId +
+                "\", \"productInstanceAttributes\":{\"deviceSerialNumber\":\"" +
+                PRODUCT_DSN + "\"}}}";
+        RequestBody builder = new FormBody.Builder()
+                .add("response_type", "device_code")
+                .add("client_id", "amzn1.application-oa2-client.8f106088fc134553bd5e315e5679567a")
+                .add("scope", "alexa:all")
+                .add("scope_data", scope_data)
+                .build();
+
+        final Request request = new Request.Builder()
+                .url(URL)
+                .post(builder)
+                .build();
+        Call call = mOkHttpClient.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.d(TAG, "onFailure: error occur " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String stringResponse = response.body().string();
+                Gson gson = new Gson();
+                AuthorizationResponse authJson = gson.fromJson(stringResponse, AuthorizationResponse.class);
+                String authCode = authJson.device_code;
+                String userCode = authJson.user_code;
+                Log.d(TAG, "CBL Response: response is " + stringResponse + ", authCode is " + authCode + ", userCode is " + userCode);
+
+
+                TokenManager.getAccessToken(mContext, authCode, userCode, getCodeVerifier(), mAuthManager, new TokenManager.TokenResponseCallback() {
+                    @Override
+                    public void onSuccess(TokenManager.TokenResponse response) {
+
+                        if(mCallback != null){
+                            mCallback.onSuccess();
+                            Util.showAuthToast(mContext, "Authorization successful.");
+                            EventBus.getDefault().post("success");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Exception error) {
+                        if(mCallback != null){
+                            mCallback.onError(error);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    class AuthorizationResponse {
+        String user_code;
+        String device_code;
+        String verification_uri;
+    }
+
     //An authorization callback to check when we get success/failure from the Amazon authentication server
     private AuthorizationListener authListener = new AuthorizationListener() {
         /**
@@ -137,7 +215,7 @@ public class AuthorizationManager {
             if(BuildConfig.DEBUG) {
             }
 
-            TokenManager.getAccessToken(mContext, authCode, getCodeVerifier(), mAuthManager, new TokenManager.TokenResponseCallback() {
+            TokenManager.getAccessToken(mContext, authCode, "",  getCodeVerifier(), mAuthManager, new TokenManager.TokenResponseCallback() {
                 @Override
                 public void onSuccess(TokenManager.TokenResponse response) {
 

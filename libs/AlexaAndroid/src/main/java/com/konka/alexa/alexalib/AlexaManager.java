@@ -209,7 +209,8 @@ public class AlexaManager {
                     }
                 }else{
                     //otherwise start the authorization process
-                    mAuthorizationManager.authorizeUser(callback);
+//                    mAuthorizationManager.authorizeUser(callback);
+//                    mAuthorizationManager.authenticateByCBL(callback);
                 }
             }
 

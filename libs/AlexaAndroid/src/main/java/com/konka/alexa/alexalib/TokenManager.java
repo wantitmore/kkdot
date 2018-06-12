@@ -4,9 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 
-import com.amazon.identity.auth.device.AuthError;
 import com.amazon.identity.auth.device.authorization.BuildConfig;
 import com.amazon.identity.auth.device.authorization.api.AmazonAuthorizationManager;
 import com.google.gson.Gson;
@@ -38,7 +38,8 @@ public class TokenManager {
     private static String ACCESS_TOKEN;
 
     private final static String ARG_GRANT_TYPE = "grant_type";
-    private final static String ARG_CODE = "code";
+    private final static String ARG_CODE = "device_code";
+    private final static String USER_CODE = "user_code";
     private final static String ARG_REDIRECT_URI = "redirect_uri";
     private final static String ARG_CLIENT_ID = "client_id";
     private final static String ARG_CODE_VERIFIER = "code_verifier";
@@ -57,21 +58,15 @@ public class TokenManager {
      * @param authorizationManager the AuthorizationManager class calling this function
      * @param callback the callback for state changes
      */
-    public static void getAccessToken(final Context context, @NotNull String authCode, @NotNull String codeVerifier, AmazonAuthorizationManager authorizationManager, @Nullable final TokenResponseCallback callback){
+    public static void getAccessToken(final Context context, @NotNull final String authCode, @NotNull final String userCode, @NotNull final String codeVerifier, final AmazonAuthorizationManager authorizationManager, @Nullable final TokenResponseCallback callback){
         //this url shouldn't be hardcoded, but it is, it's the Amazon auth access token endpoint
         String url = "https://api.amazon.com/auth/O2/token";
 
         //set up our arguments for the api call, these will be the call headers
         FormBody.Builder builder = new FormBody.Builder()
-                .add(ARG_GRANT_TYPE, "authorization_code")
-                .add(ARG_CODE, authCode);
-        try {
-            builder.add(ARG_REDIRECT_URI, authorizationManager.getRedirectUri());
-            builder.add(ARG_CLIENT_ID, authorizationManager.getClientId());
-        } catch (AuthError authError) {
-            authError.printStackTrace();
-        }
-        builder.add(ARG_CODE_VERIFIER, codeVerifier);
+                .add(ARG_GRANT_TYPE, "device_code")
+                .add(ARG_CODE, authCode)
+                .add(USER_CODE, userCode);
 
         OkHttpClient client = ClientUtil.getTLS12OkHttpClient();
 
@@ -101,18 +96,30 @@ public class TokenManager {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = response.body().string();
-                if(BuildConfig.DEBUG) {
-                    Log.i(TAG, s);
+                if(com.konka.alexa.alexalib.BuildConfig.DEBUG) {
+                    Log.i(TAG, "tokenManager is " + s);
                 }
                 final TokenResponse tokenResponse = new Gson().fromJson(s, TokenResponse.class);
+                if (tokenResponse.access_token == null || tokenResponse.refresh_token == null) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            SystemClock.sleep(2000);
+                            getAccessToken(context, authCode, userCode, codeVerifier, authorizationManager, callback);
+                        }
+                    }).start();
+                    return;
+                }
                 //save our tokens to local shared preferences
                 saveTokens(context, tokenResponse);
+                Log.d(TAG, "onResponse: tokenResponse " + tokenResponse);
 
                 if(callback != null){
                     //bubble up success
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
+                            Log.d(TAG, "run: success --> think to try");
                             callback.onSuccess(tokenResponse);
                         }
                     });
@@ -224,6 +231,7 @@ public class TokenManager {
     private static void saveTokens(Context context, TokenResponse tokenResponse){
         REFRESH_TOKEN = tokenResponse.refresh_token;
         ACCESS_TOKEN = tokenResponse.access_token;
+        Log.d(TAG, "saveTokens: access is " + ACCESS_TOKEN + ", " + REFRESH_TOKEN);
 
         SharedPreferences.Editor preferences = Util.getPreferences(context.getApplicationContext()).edit();
         preferences.putString(PREF_ACCESS_TOKEN, ACCESS_TOKEN);

@@ -305,7 +305,7 @@ public class DisplayService extends Service implements BaseListenerFragment.AvsL
                 startService(new Intent(DisplayService.this, DownChannelService.class));
                 runnableHandler.postDelayed(this, 60 * 1000);
             }
-        }, 10 * 60 * 1000);
+        }, 60 * 1000);
     }
 
     public void setMusicProgressCallBack(MusicProgressCallBack callBack) {

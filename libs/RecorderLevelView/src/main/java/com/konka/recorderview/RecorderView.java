@@ -10,7 +10,8 @@ import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.willblaschko.android.recorderview.R;
+import com.konka.android.recorderview.R;
+
 
 /**
  * @author willb_000 on 5/5/2016.

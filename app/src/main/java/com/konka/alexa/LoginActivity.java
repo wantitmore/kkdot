@@ -17,6 +17,9 @@ import android.widget.Toast;
 
 import com.konka.alexa.alexalib.AlexaManager;
 import com.konka.alexa.alexalib.AuthorizationManager;
+import com.konka.alexa.alexalib.callbacks.AsyncCallback;
+import com.konka.alexa.alexalib.callbacks.AuthorizationCallback;
+import com.konka.alexa.alexalib.interfaces.AvsResponse;
 import com.konka.alexa.display.DisplayService;
 import com.konka.alexa.global.Constants;
 
@@ -55,7 +58,6 @@ public class LoginActivity extends Activity implements View.OnClickListener{
             Log.d(TAG, "onCreate: needLogin " + needLogin);
             if (!needLogin) {
                 // show education login UI
-//            startActivity(new Intent(this, LoginActivity.class));
                 startService(new Intent(this, DisplayService.class));
                 finish();
             }
@@ -126,7 +128,7 @@ public class LoginActivity extends Activity implements View.OnClickListener{
             case R.id.btn_login:
                 Log.d(TAG, "onClick: ");
                 mAlexaManager = AlexaManager.getInstance(this, Constants.PRODUCT_ID);
-                logIn(new AlexaManager.ImplAuthorizationCallback<com.konka.alexa.alexalib.interfaces.AvsResponse>(null) {
+                logIn(new AlexaManager.ImplAuthorizationCallback<AvsResponse>(null) {
                     @Override
                     public void onSuccess() {
                         //call our function again
@@ -140,7 +142,6 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 finish();
                 break;
             case R.id.btn_done:
-//                startActivity(new Intent(this, DisplayCardActivity.class));
                 startService(new Intent(this, DisplayService.class));
                 finish();
                 break;
@@ -153,14 +154,13 @@ public class LoginActivity extends Activity implements View.OnClickListener{
             mThinsTryLayout.setVisibility(View.VISIBLE);
             mloginLayout.setVisibility(View.GONE);
             getSharedPreferences(ALEXA, Context.MODE_PRIVATE).edit().putBoolean(LOGIN, false).apply();
-//            Settings.System.putInt(getContentResolver(), Constants.LOGIN, 0);
         }
     }
 
-    public void logIn(@Nullable final com.konka.alexa.alexalib.callbacks.AuthorizationCallback callback){
+    public void logIn(@Nullable final AuthorizationCallback callback){
         //check if we're already logged in
         final AuthorizationManager authorizationManager = mAlexaManager.getAuthorizationManager();
-        authorizationManager.checkLoggedIn(this, new com.konka.alexa.alexalib.callbacks.AsyncCallback<Boolean, Throwable>() {
+        authorizationManager.checkLoggedIn(this, new AsyncCallback<Boolean, Throwable>() {
             @Override
             public void start() {
 
@@ -178,7 +178,8 @@ public class LoginActivity extends Activity implements View.OnClickListener{
                 }else{
                     //otherwise start the authorization process
                     Log.d(TAG, "success: authorizationManager");
-                    authorizationManager.authorizeUser(callback);
+//                    authorizationManager.authorizeUser(callback);
+                    authorizationManager.authenticateByCBL(callback);
                 }
             }
 
